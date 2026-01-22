@@ -1,16 +1,18 @@
+# SPDX-License-Identifier: MIT
+
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
-dynamic = ["version"]
 name = "hrcp"
-description = "Hierarchical Resource Configuration with Provenance"
-readme = "README.md"
 authors = [
     { name = "Alvin Yip", email = "keongalvin@gmail.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+description = "Hierarchical Resource Configuration with Provenance"
 keywords = []
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -19,68 +21,68 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11"
 ]
-requires-python = ">=3.11"
 dependencies = [
+    "pyyaml>=6.0",
+    "tomli-w>=1.0.0",
 ]
+dynamic = ["version"]
+readme = "README.md"
 
 [dependency-groups]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
+    "hypothesis>=6.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
 ]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { local_scheme = "no-local-version" }
+
+[tool.check-wheel-contents]
+toplevel = ["hrcp"]
 
 [tool.ruff.lint]
-select = [
-    "A", # flake8-builtins
-    "B", # flake8-bugbear
-    "BLE", # flake8-blind-except
-    "C4", # flake8-comprehensions
-    "C90", # mccabe
-    "DJ", # flake8-django
-    "DTZ", # flake8-datetimez
-    "E", # pycodestyle errors
-    "ERA", # eradicate
-    "EXE", # flake8-executable
-    "F", # pyflakes
-    "G", # flake8-logging-format
-    "I", # isort
-    "ICN", # flake8-import-conventions
-    "ISC", # flake8-implicit-str-concat
-    "N", # pep8-naming
-    "PIE", # flake8-pie
-    "PLC", # pylint - convention
-    "PLE", # pylint - error
-    "PLW", # pylint - warning
-    "PTH", # flake8-use-pathlib
-    "Q", # flake8-quotes
-    "RET", # flake8-return
-    "RUF", # Ruff-specific rules
-    "S", # flake8-bandit
-    "SIM", # flake8-simplify
-    "T10", # flake8-debugger
-    "T20", # flake8-print
-    "TC", # flake8-type-checking
-    "TID", # flake8-tidy-imports
-    "UP", # pyupgrade
-    "W", # pycodestyle - warning
-    "YTT", # flake8-2020
-]
+select = ["ALL"]
 ignore = [
-    "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
-    "B010", # flake8-bugbear - do not call setattr with a constant attribute value
-    "BLE001", # flake8-blind-except - do not catch blind exception
-    "E501", # pycodestyle - line too long - handled by ruff format
-    "E402", # pycodestyle - module import not at top of file
-    "ERA001", # eradicate - found commented-out code
-    "PLW2901", # pylint - for loop variable overwritten by assignment target
-    "RUF012", # Ruff-specific rule - annotated with classvar
-    "ISC001", # Ruff formatter incompatible
-    "S311", #  # suspicious-non-cryptographic-random-usage
+    "A001", # shadowing is fine
+    "A002", # shadowing is fine
+    "A003", # shadowing is fine
+    "ANN", # Mypy is better at this
+    "ARG", # unused arguments are normal when implementing interfaces
+    "C901", # we're complex software
+    "COM", # ruff format takes care of our commas
+    "D", # We prefer our own docstring style.
+    "E501", # leave line-length enforcement to ruff format
+    "ERA001", # we need to keep around some notes
+    "FBT", # we don't hate bool args around here
+    "FIX", # Yes, we want XXX as a marker.
+    "ISC001", # conflicts with ruff format
+    "N", # we need more naming freedom
+    "PD", # we're not pandas
+    "PLC0415", # sometimes, imports have to live elsewhere
+    "PLR0912", # we're complex software
+    "PLR0913", # yes, many arguments, but most have defaults
+    "PLR0915", # we're complex software
+    "PLR2004", # numbers are sometimes fine
+    "PLW0603", # sometimes we need globals
+    "S307", # eval FTW
+    "SLF001", # private members are accessed by friendly functions
+    "TC", # TYPE_CHECKING blocks break autodocs
+    "TD", # we don't follow other people's todo style
+    "TRY301", # I'm sorry, but this makes not sense for us.
+    "UP031", # format() is slow as molasses; % and f'' FTW.
+    "UP006", # replace Dict etc by dict etc later.
+    "UP035", # replace Dict etc by dict etc later.
 ]
-fixable = ["RUF022", "I", "F401", "UP"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hrcp"]
@@ -89,11 +91,43 @@ force-single-line = true
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["hrcp"]
 
-[tool.pytest.ini_options]
-addopts = ["--import-mode=importlib"]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
+[tool.ruff.lint.per-file-ignores]
+"bench/**" = [
+    "INP001", # Benchmarks don't have to be importable.
+]
+"**/test_*" = [
+    "INP001",
+    "B015", # pointless comparison in tests aren't pointless
+    "B017", # pytest.raises(Exception) is fine
+    "B018", # pointless expressions in tests aren't pointless
+    "DTZ", # datetime best practices don't matter in tests
+    "EM", # no need for exception msg hygiene in tests
+    "PLE0309", # hash doesn't have to return anything in tests
+    "PLW1641", # it's OK to rely object's __hash__
+    "PLR0124", # pointless comparison in tests aren't pointless
+    "PT011", # broad is fine
+    "PT012", # sometimes we need more than a single stmt
+    "RUF012", # we don't do ClassVar annotations in tests
+    "S", # security concerns don't matter in tests
+    "SIM201", # sometimes we need to check `not ==`
+    "SIM202", # sometimes we need to check `not ==`
+    "SIM300", # Yoda rocks in asserts
+    "TRY", # exception best practices don't matter in tests
+]
 
-[tool.hatch.version]
-source = "vcs"
-raw-options = { local_scheme = "no-local-version" }
+
+[tool.pytest.ini_options]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--import-mode=importlib", # make src truly unimportable
+]
+xfail_strict = true
+testpaths = "tests"
+
+[tool.coverage.run]
+parallel = true
+branch = true
+patch = ["subprocess"]
+source_pkgs = ["hrcp"]

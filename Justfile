@@ -18,6 +18,22 @@ alias fmt := format
 format:
     @just python-format
 
+# === Documentation ===
+# Serve docs locally with live reload
+[group('docs')]
+docs:
+    uv run --group docs mkdocs serve
+
+# Build documentation
+[group('docs')]
+docs-build:
+    uv run --group docs mkdocs build
+
+# Deploy docs to GitHub Pages
+[group('docs')]
+docs-deploy:
+    uv run --group docs mkdocs gh-deploy --force
+
 # Run linters
 [group('qa')]
 lint path="":
