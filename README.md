@@ -22,7 +22,7 @@ pip install hrcp
 ## Quick Example
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_effective_value, get_value_with_provenance
+from hrcp import ResourceTree, PropagationMode, get_value
 
 # Build a hierarchy
 tree = ResourceTree(root_name="platform")
@@ -35,15 +35,15 @@ tree.create("/platform/eu-west/api")
 
 # Inheritance: values flow DOWN
 api = tree.get("/platform/us-east/api")
-timeout = get_effective_value(api, "timeout", PropagationMode.DOWN)
+timeout = get_value(api, "timeout", PropagationMode.DOWN)
 # timeout == 60 (local override)
 
 db = tree.get("/platform/us-east/db")
-timeout = get_effective_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.DOWN)
 # timeout == 30 (inherited from root)
 
 # Provenance: know where it came from
-prov = get_value_with_provenance(db, "timeout", PropagationMode.DOWN)
+prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
 print(prov.value)        # 30
 print(prov.source_path)  # "/platform" - the root provided this value
 ```
@@ -59,7 +59,7 @@ tree.root.set_attribute("tier", "premium")
 tree.create("/org/team/project")
 
 project = tree.get("/org/team/project")
-tier = get_effective_value(project, "tier", PropagationMode.DOWN)
+tier = get_value(project, "tier", PropagationMode.DOWN)
 # "premium" - inherited from root
 ```
 
@@ -71,7 +71,7 @@ Collect all values from the subtree.
 tree.create("/org/team1", attributes={"headcount": 5})
 tree.create("/org/team2", attributes={"headcount": 8})
 
-counts = get_effective_value(tree.root, "headcount", PropagationMode.UP)
+counts = get_value(tree.root, "headcount", PropagationMode.UP)
 # [5, 8]
 ```
 
@@ -84,7 +84,7 @@ tree.root.set_attribute("config", {"db": {"host": "localhost", "port": 5432}})
 tree.create("/org/prod", attributes={"config": {"db": {"host": "prod.db.internal"}}})
 
 prod = tree.get("/org/prod")
-config = get_effective_value(prod, "config", PropagationMode.MERGE_DOWN)
+config = get_value(prod, "config", PropagationMode.MERGE_DOWN)
 # {"db": {"host": "prod.db.internal", "port": 5432}}
 ```
 
@@ -97,15 +97,15 @@ Only return the value if set directly on the resource.
 The killer feature. Always know where a value came from:
 
 ```python
-from hrcp import get_value_with_provenance
+from hrcp import get_value
 
-prov = get_value_with_provenance(resource, "timeout", PropagationMode.DOWN)
+prov = get_value(resource, "timeout", PropagationMode.DOWN, with_provenance=True)
 prov.value        # The resolved value
 prov.source_path  # Path of the resource that provided it
 prov.mode         # The propagation mode used
 ```
 
-For MERGE_DOWN, provenance tracks which resource contributed each key.
+For MERGE_DOWN, provenance tracks which resource contributed each key via `prov.key_sources`.
 
 ## Wildcards
 
