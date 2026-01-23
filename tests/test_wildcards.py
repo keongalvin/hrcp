@@ -312,3 +312,277 @@ class TestQueryValues:
 
         # UP returns lists, query_values extends them
         assert sorted(values) == sorted([val1, val2])
+
+
+class TestWildcardEdgeCases:
+    """Test edge cases in wildcard pattern matching."""
+
+    @given(root=valid_name)
+    def test_root_only_pattern_matches_root(self, root):
+        """Pattern '/' or '/{root}' should match only the root."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child")
+
+        results = tree.query(f"/{root}")
+
+        assert len(results) == 1
+        assert results[0].path == f"/{root}"
+
+    @given(root=valid_name, child=valid_name)
+    def test_double_wildcard_matches_root_and_descendants(self, root, child):
+        """Pattern '/{root}/**' should match root and all descendants."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+
+        results = tree.query(f"/{root}/**")
+
+        paths = [r.path for r in results]
+        # Should include the child (and possibly root depending on semantics)
+        assert f"/{root}/{child}" in paths
+
+    @given(root=valid_name, child=valid_name)
+    def test_trailing_slash_ignored(self, root, child):
+        """Trailing slash should not affect matching."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+
+        results_no_slash = tree.query(f"/{root}/{child}")
+        results_with_slash = tree.query(f"/{root}/{child}/")
+
+        assert len(results_no_slash) == len(results_with_slash)
+        assert results_no_slash[0].path == results_with_slash[0].path
+
+
+class TestSpecialCharactersInPaths:
+    """Test paths containing regex metacharacters."""
+
+    @given(root=valid_name)
+    def test_dot_in_path_literal_match(self, root):
+        """Dots in paths should match literally, not as regex wildcard."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/server.prod")
+        tree.create(f"/{root}/serverXprod")  # Would match if . is regex
+
+        results = tree.query(f"/{root}/server.prod")
+
+        assert len(results) == 1
+        assert results[0].path == f"/{root}/server.prod"
+
+    @given(root=valid_name)
+    def test_brackets_in_path(self, root):
+        """Brackets should match literally."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/host[0]")
+        tree.create(f"/{root}/host1")
+
+        results = tree.query(f"/{root}/host[0]")
+
+        assert len(results) == 1
+        assert results[0].path == f"/{root}/host[0]"
+
+    @given(root=valid_name)
+    def test_parentheses_in_path(self, root):
+        """Parentheses should match literally."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/group(1)")
+
+        results = tree.query(f"/{root}/group(1)")
+
+        assert len(results) == 1
+        assert results[0].path == f"/{root}/group(1)"
+
+    @given(root=valid_name)
+    def test_plus_in_path(self, root):
+        """Plus signs should match literally."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/c++")
+        tree.create(f"/{root}/ccc")  # Would match if + is regex
+
+        results = tree.query(f"/{root}/c++")
+
+        assert len(results) == 1
+        assert results[0].path == f"/{root}/c++"
+
+    @given(root=valid_name)
+    def test_caret_and_dollar_in_path(self, root):
+        """Caret and dollar should match literally."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/$var")
+        tree.create(f"/{root}/^start")
+
+        results_dollar = tree.query(f"/{root}/$var")
+        results_caret = tree.query(f"/{root}/^start")
+
+        assert len(results_dollar) == 1
+        assert len(results_caret) == 1
+
+
+class TestMultipleWildcardsInSegment:
+    """Test multiple wildcards within a single path segment."""
+
+    @given(root=valid_name)
+    def test_wildcard_prefix(self, root):
+        """Wildcard at start of segment: *server."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/webserver")
+        tree.create(f"/{root}/appserver")
+        tree.create(f"/{root}/database")
+
+        results = tree.query(f"/{root}/*server")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/webserver" in paths
+        assert f"/{root}/appserver" in paths
+        assert f"/{root}/database" not in paths
+        assert len(results) == 2
+
+    @given(root=valid_name)
+    def test_wildcard_middle_of_segment(self, root):
+        """Wildcard in middle: ser*1."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/server1")
+        tree.create(f"/{root}/service1")
+        tree.create(f"/{root}/server2")
+
+        results = tree.query(f"/{root}/ser*1")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/server1" in paths
+        assert f"/{root}/service1" in paths
+        assert f"/{root}/server2" not in paths
+
+    @given(root=valid_name)
+    def test_multiple_wildcards_in_segment(self, root):
+        """Multiple wildcards in one segment: s*v*r."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/server")
+        tree.create(f"/{root}/saver")
+        tree.create(f"/{root}/sliver")
+        tree.create(f"/{root}/database")
+
+        results = tree.query(f"/{root}/s*v*r")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/server" in paths
+        assert f"/{root}/saver" in paths
+        assert f"/{root}/sliver" in paths
+        assert f"/{root}/database" not in paths
+
+
+class TestComplexWildcardCombinations:
+    """Test complex combinations of wildcards."""
+
+    @given(root=valid_name, mid=valid_name)
+    def test_double_wildcard_followed_by_single(self, root, mid):
+        """Pattern /**/* should match any path with at least one segment after root."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{mid}")
+        tree.create(f"/{root}/{mid}/child")
+        tree.create(f"/{root}/{mid}/child/grandchild")
+
+        results = tree.query(f"/{root}/**/*")
+
+        # Should match all descendants (each has at least one segment)
+        assert len(results) >= 3
+
+    @given(root=valid_name, a=valid_name, b=valid_name)
+    def test_multiple_double_wildcards(self, root, a, b):
+        """Pattern /**/a/**/b with double wildcards at multiple positions."""
+        if a == b:
+            b = b + "2"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{a}/{b}")
+        tree.create(f"/{root}/x/{a}/y/{b}")
+        tree.create(f"/{root}/{a}/mid/{b}")
+        tree.create(f"/{root}/{a}/other")  # No b at end
+
+        results = tree.query(f"/{root}/**/{a}/**/{b}")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/{a}/{b}" in paths
+        assert f"/{root}/x/{a}/y/{b}" in paths
+        assert f"/{root}/{a}/mid/{b}" in paths
+        assert f"/{root}/{a}/other" not in paths
+
+    @given(root=valid_name, child=valid_name)
+    def test_single_wildcard_then_double_wildcard(self, root, child):
+        """Pattern /root/*/**: single then double wildcard."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+        tree.create(f"/{root}/{child}/a")
+        tree.create(f"/{root}/{child}/a/b")
+
+        results = tree.query(f"/{root}/*/**")
+
+        # Should match child and all its descendants
+        paths = [r.path for r in results]
+        assert f"/{root}/{child}" in paths
+        assert f"/{root}/{child}/a" in paths
+        assert f"/{root}/{child}/a/b" in paths
+
+    @given(root=valid_name)
+    def test_consecutive_single_wildcards(self, root):
+        """Pattern /*/*/* with consecutive single wildcards."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/a/b")
+        tree.create(f"/{root}/a/b/c")
+        tree.create(f"/{root}/a/b/c/d")
+
+        results = tree.query(f"/{root}/*/*/*")
+
+        # Should match exactly 3 levels deep
+        paths = [r.path for r in results]
+        assert f"/{root}/a/b/c" in paths
+        assert f"/{root}/a/b" not in paths
+        assert f"/{root}/a/b/c/d" not in paths
+
+
+class TestMalformedPatterns:
+    """Test handling of malformed or unusual patterns."""
+
+    @given(root=valid_name, child=valid_name)
+    def test_double_slashes_in_pattern(self, root, child):
+        """Double slashes should be handled gracefully."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+
+        # Pattern with double slash - should either normalize or match nothing
+        results = tree.query(f"/{root}//{child}")
+
+        # Should either match the path or return empty, not raise
+        assert isinstance(results, list)
+
+    @given(root=valid_name, child=valid_name)
+    def test_pattern_without_leading_slash(self, root, child):
+        """Pattern without leading slash should still work."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+
+        results = tree.query(f"{root}/{child}")
+
+        # Should match the path (normalized)
+        assert len(results) == 1
+        assert results[0].path == f"/{root}/{child}"
+
+    @given(root=valid_name)
+    def test_empty_pattern(self, root):
+        """Empty pattern should return empty or match root."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child")
+
+        results = tree.query("")
+
+        # Empty pattern - should return empty list or just root
+        assert isinstance(results, list)
+
+    @given(root=valid_name, child=valid_name)
+    def test_only_wildcards_pattern(self, root, child):
+        """Pattern of only wildcards: /*."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+
+        results = tree.query("/*")
+
+        # Should match the root
+        paths = [r.path for r in results]
+        assert f"/{root}" in paths

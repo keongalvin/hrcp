@@ -1,6 +1,6 @@
 # Philosophy & Scope
 
-HRCP is intentionally minimal: **<1800 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
+HRCP is intentionally minimal: **~1200 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
 
 ## Core Focus
 

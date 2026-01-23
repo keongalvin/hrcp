@@ -3,13 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
 from typing import Any
-
-from hrcp.schema import SchemaRegistry
-
-if TYPE_CHECKING:
-    pass
 
 
 class Resource:
@@ -33,7 +27,6 @@ class Resource:
         self,
         name: str,
         attributes: dict[str, Any] | None = None,
-        schema_registry: SchemaRegistry | None = None,
     ) -> None:
         """Create a new Resource.
 
@@ -41,11 +34,9 @@ class Resource:
             name: Unique identifier for this resource within its parent.
                   Cannot be empty or contain '/'.
             attributes: Initial configuration key-value pairs.
-            schema_registry: Optional registry for attribute validation.
 
         Raises:
             ValueError: If name is empty or contains '/'.
-            ValidationError: If initial attributes fail validation.
         """
         if not name:
             msg = "name cannot be empty"
@@ -55,15 +46,9 @@ class Resource:
             raise ValueError(msg)
 
         self._name = name
-        self._schema_registry = schema_registry
         self._parent: Resource | None = None
         self._children: dict[str, Resource] = {}
-
-        # Initialize attributes with validation
-        self._attributes: dict[str, Any] = {}
-        if attributes:
-            for key, value in attributes.items():
-                self.set_attribute(key, value)
+        self._attributes: dict[str, Any] = dict(attributes) if attributes else {}
 
     @property
     def name(self) -> str:
@@ -145,12 +130,7 @@ class Resource:
         Args:
             key: The attribute name.
             value: The attribute value.
-
-        Raises:
-            ValidationError: If the value fails schema validation.
         """
-        if self._schema_registry is not None:
-            self._schema_registry.validate(key, value, self.path)
         self._attributes[key] = value
 
     def get_attribute(self, key: str, default: Any = None) -> Any:
@@ -202,100 +182,7 @@ class ResourceTree:
         Args:
             root_name: Name for the root Resource.
         """
-        self._schema_registry = SchemaRegistry()
-        self._root = Resource(name=root_name, schema_registry=self._schema_registry)
-
-    def define(self, key: str, **kwargs: Any) -> None:
-        """Define a schema for an attribute.
-
-        Args:
-            key: The attribute key.
-            **kwargs: Schema constraints (type_, choices, ge, le, validator).
-        """
-        self._schema_registry.define(key, **kwargs)
-
-    @property
-    def schema(self) -> SchemaRegistry:
-        """The schema registry for this tree.
-
-        Allows introspection of defined schemas:
-            for key, schema in tree.schema.items():
-                print(f"{key}: {schema.type_}")
-        """
-        return self._schema_registry
-
-    def to_json_schema(self) -> dict[str, Any]:
-        """Export the tree's schema as JSON Schema.
-
-        Returns:
-            A dict conforming to JSON Schema draft 2020-12.
-        """
-        return self._schema_registry.to_json_schema()
-
-    def get_attribute_or_default(self, path: str, key: str) -> Any | None:
-        """Get an attribute value, falling back to schema default if not set.
-
-        Args:
-            path: Path to the resource.
-            key: Attribute key to retrieve.
-
-        Returns:
-            The attribute value if set, otherwise the schema default,
-            or None if neither exists.
-
-        Raises:
-            KeyError: If the path does not exist.
-        """
-        resource = self.get(path)
-        if resource is None:
-            msg = f"Path not found: {path}"
-            raise KeyError(msg)
-
-        value = resource.attributes.get(key)
-        if value is not None:
-            return value
-
-        return self._schema_registry.get_default(key)
-
-    def get_missing_required(self, path: str) -> list[str]:
-        """Get list of missing required attributes at a path.
-
-        Args:
-            path: Path to the resource.
-
-        Returns:
-            List of required attribute keys that are not set.
-
-        Raises:
-            KeyError: If the path does not exist.
-        """
-        resource = self.get(path)
-        if resource is None:
-            msg = f"Path not found: {path}"
-            raise KeyError(msg)
-
-        return [
-            key
-            for key in self._schema_registry.required_fields()
-            if key not in resource.attributes
-        ]
-
-    def validate_required(self, path: str) -> None:
-        """Validate that all required attributes are present at a path.
-
-        Args:
-            path: Path to the resource.
-
-        Raises:
-            KeyError: If the path does not exist.
-            ValidationError: If any required attribute is missing.
-        """
-        from hrcp.schema import ValidationError
-
-        missing = self.get_missing_required(path)
-        if missing:
-            msg = f"Missing required attributes at {path}: {', '.join(missing)}"
-            raise ValidationError(msg)
+        self._root = Resource(name=root_name)
 
     @property
     def root(self) -> Resource:
@@ -374,7 +261,6 @@ class ResourceTree:
                 child = Resource(
                     name=part,
                     attributes=attributes if is_final else None,
-                    schema_registry=self._schema_registry,
                 )
                 current.add_child(child)
             current = child
@@ -652,70 +538,6 @@ class ResourceTree:
         from hrcp.serialization import tree_from_toml_file
 
         return tree_from_toml_file(path, root_name)
-
-    def validate_all(self, path: str | None = None) -> dict[str, list[str]]:
-        """Validate all resources against schema requirements.
-
-        Args:
-            path: Optional path to restrict validation to a subtree.
-
-        Returns:
-            Dict mapping resource paths to lists of missing required fields.
-            Empty dict means all resources are valid.
-        """
-        errors: dict[str, list[str]] = {}
-        start = self.get(path) if path else self.root
-
-        if start is None:
-            return errors
-
-        required = self._schema_registry.required_fields()
-
-        for resource in self._walk_resource(start):
-            missing = [key for key in required if key not in resource.attributes]
-            if missing:
-                errors[resource.path] = missing
-
-        return errors
-
-    def is_valid(self, path: str | None = None) -> bool:
-        """Check if all resources pass validation.
-
-        Args:
-            path: Optional path to restrict check to a subtree.
-
-        Returns:
-            True if no validation errors, False otherwise.
-        """
-        return len(self.validate_all(path)) == 0
-
-    def validation_summary(self, path: str | None = None) -> str:
-        """Get human-readable validation report.
-
-        Args:
-            path: Optional path to restrict report to a subtree.
-
-        Returns:
-            Multi-line string summarizing validation errors.
-        """
-        errors = self.validate_all(path)
-
-        if not errors:
-            return "All resources are valid."
-
-        lines = ["Validation Errors:", ""]
-
-        for resource_path, missing_keys in sorted(errors.items()):
-            lines.append(f"{resource_path}:")
-            for key in missing_keys:
-                schema = self._schema_registry.get(key)
-                desc = ""
-                if schema and schema.description:
-                    desc = f" - {schema.description}"
-                lines.append(f"  - Missing required: {key}{desc}")
-            lines.append("")
-
-        return "\n".join(lines)
 
     def __repr__(self) -> str:
         """Return a string representation of the ResourceTree."""

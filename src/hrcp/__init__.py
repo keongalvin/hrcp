@@ -5,7 +5,6 @@ A Python library for managing hierarchical configuration with:
 - Aggregation: Values aggregate UP from descendants
 - Merge: Deep merge of dicts through hierarchy
 - Provenance: Track where every value came from
-- Schema validation: Enforce constraints on attribute values
 - Wildcards: Query across hierarchy with patterns (* and **)
 """
 
@@ -19,20 +18,13 @@ from hrcp.path import split_path
 from hrcp.propagation import PropagationMode
 from hrcp.provenance import Provenance
 from hrcp.provenance import get_value
-from hrcp.schema import PropertySchema
-from hrcp.schema import SchemaRegistry
-from hrcp.schema import ValidationError
-from hrcp.schema import validate_value
 from hrcp.wildcards import match_pattern
 
 __all__ = [
     "PropagationMode",
-    "PropertySchema",
     "Provenance",
     "Resource",
     "ResourceTree",
-    "SchemaRegistry",
-    "ValidationError",
     "basename",
     "get_value",
     "join_path",
@@ -40,5 +32,4 @@ __all__ = [
     "normalize_path",
     "parent_path",
     "split_path",
-    "validate_value",
 ]

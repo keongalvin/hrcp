@@ -40,13 +40,9 @@ def load_children(
     for child_data in children_data.values():
         child = Resource(
             name=child_data["name"],
-            schema_registry=tree._schema_registry,
+            attributes=child_data.get("attributes"),
         )
-        # Set attributes bypassing validation
-        for key, value in child_data.get("attributes", {}).items():
-            child._attributes[key] = value
         parent.add_child(child)
-        # Recurse for grandchildren
         load_children(tree, child, child_data.get("children", {}))
 
 
@@ -141,7 +137,6 @@ def tree_to_toml(tree: ResourceTree, path: str | None = None) -> str:
 
 
 def load_toml_child(
-    tree: ResourceTree,
     parent: Resource,
     name: str,
     data: dict[str, Any],
@@ -149,12 +144,12 @@ def load_toml_child(
     """Recursively load TOML child resources."""
     from hrcp.core import Resource
 
-    child = Resource(name=name, schema_registry=tree._schema_registry)
+    child = Resource(name=name)
     parent.add_child(child)
 
     for key, value in data.items():
         if isinstance(value, dict):
-            load_toml_child(tree, child, key, value)
+            load_toml_child(child, key, value)
         else:
             child.set_attribute(key, value)
 
@@ -170,7 +165,7 @@ def tree_from_toml(toml_str: str, root_name: str = "root") -> ResourceTree:
 
     for key, value in data.items():
         if isinstance(value, dict):
-            load_toml_child(tree, tree.root, key, value)
+            load_toml_child(tree.root, key, value)
         else:
             tree.root.set_attribute(key, value)
 
