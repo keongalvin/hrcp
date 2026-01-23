@@ -96,7 +96,10 @@ class TestResourceChildren:
 
         assert child.parent is parent
 
-    @given(parent_name=valid_name, child_names=st.lists(valid_name, min_size=2, max_size=5, unique=True))
+    @given(
+        parent_name=valid_name,
+        child_names=st.lists(valid_name, min_size=2, max_size=5, unique=True),
+    )
     def test_add_multiple_children(self, parent_name, child_names):
         """Multiple children can be added to a Resource."""
         parent = Resource(name=parent_name)
@@ -227,7 +230,13 @@ class TestResourceAttributes:
         assert resource.get_attribute(key) is None
         assert resource.get_attribute(key, default=default) == default
 
-    @given(name=valid_name, key1=valid_name, key2=valid_name, val1=attr_value, val2=attr_value)
+    @given(
+        name=valid_name,
+        key1=valid_name,
+        key2=valid_name,
+        val1=attr_value,
+        val2=attr_value,
+    )
     def test_delete_attribute(self, name, key1, key2, val1, val2):
         """An attribute can be deleted from a Resource."""
         # Ensure distinct keys

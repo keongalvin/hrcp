@@ -49,7 +49,9 @@ class TestSchemaRegistryDefaults:
         schema = registry.get(key)
         assert schema.default == default
 
-    @given(key1=valid_name, key2=valid_name, default1=st.integers(), default2=st.booleans())
+    @given(
+        key1=valid_name, key2=valid_name, default1=st.integers(), default2=st.booleans()
+    )
     def test_get_default_returns_default_value(self, key1, key2, default1, default2):
         """get_default() returns the default value for a key."""
         if key1 == key2:
@@ -90,7 +92,9 @@ class TestResourceTreeWithDefaults:
         assert value == default
 
     @given(root=valid_name, key=valid_name, default=st.integers(), actual=st.integers())
-    def test_get_attribute_or_default_returns_set_value(self, root, key, default, actual):
+    def test_get_attribute_or_default_returns_set_value(
+        self, root, key, default, actual
+    ):
         """get_attribute_or_default returns actual value when attribute is set."""
         tree = ResourceTree(root_name=root)
         tree.define(key, type_=int, default=default)

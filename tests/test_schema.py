@@ -27,13 +27,20 @@ class TestPropertySchema:
         schema = PropertySchema(type_=int)
         assert schema.type_ is int
 
-    @given(choices=st.lists(st.text(min_size=1, max_size=10), min_size=2, max_size=5, unique=True))
+    @given(
+        choices=st.lists(
+            st.text(min_size=1, max_size=10), min_size=2, max_size=5, unique=True
+        )
+    )
     def test_create_schema_with_choices(self, choices):
         """A schema can specify allowed values."""
         schema = PropertySchema(choices=tuple(choices))
         assert schema.choices == tuple(choices)
 
-    @given(ge=st.integers(min_value=0, max_value=50), le=st.integers(min_value=51, max_value=100))
+    @given(
+        ge=st.integers(min_value=0, max_value=50),
+        le=st.integers(min_value=51, max_value=100),
+    )
     def test_create_schema_with_range(self, ge, le):
         """A schema can specify min/max constraints."""
         schema = PropertySchema(ge=ge, le=le)
@@ -77,13 +84,22 @@ class TestValidateValue:
         assert key in str(exc_info.value)
         assert "int" in str(exc_info.value)
 
-    @given(choices=st.lists(st.text(min_size=1, max_size=10), min_size=3, max_size=5, unique=True))
+    @given(
+        choices=st.lists(
+            st.text(min_size=1, max_size=10), min_size=3, max_size=5, unique=True
+        )
+    )
     def test_validate_valid_choice(self, choices):
         """Valid choice passes validation."""
         schema = PropertySchema(choices=tuple(choices))
         validate_value(choices[1], schema, "size")  # Should not raise
 
-    @given(choices=st.lists(st.text(min_size=1, max_size=10), min_size=2, max_size=5, unique=True), invalid=st.text(min_size=1, max_size=10))
+    @given(
+        choices=st.lists(
+            st.text(min_size=1, max_size=10), min_size=2, max_size=5, unique=True
+        ),
+        invalid=st.text(min_size=1, max_size=10),
+    )
     def test_validate_invalid_choice_raises(self, choices, invalid):
         """Invalid choice raises ValidationError."""
         if invalid in choices:
@@ -93,7 +109,10 @@ class TestValidateValue:
             validate_value(invalid, schema, "size")
         assert "size" in str(exc_info.value)
 
-    @given(ge=st.integers(min_value=0, max_value=50), value=st.integers(min_value=50, max_value=100))
+    @given(
+        ge=st.integers(min_value=0, max_value=50),
+        value=st.integers(min_value=50, max_value=100),
+    )
     def test_validate_ge_constraint(self, ge, value):
         """Value >= ge passes validation."""
         schema = PropertySchema(ge=ge)
@@ -108,7 +127,10 @@ class TestValidateValue:
         assert "count" in str(exc_info.value)
         assert ">=" in str(exc_info.value)
 
-    @given(le=st.integers(min_value=50, max_value=100), value=st.integers(min_value=0, max_value=50))
+    @given(
+        le=st.integers(min_value=50, max_value=100),
+        value=st.integers(min_value=0, max_value=50),
+    )
     def test_validate_le_constraint(self, le, value):
         """Value <= le passes validation."""
         schema = PropertySchema(le=le)
@@ -123,7 +145,11 @@ class TestValidateValue:
         assert "percent" in str(exc_info.value)
         assert "<=" in str(exc_info.value)
 
-    @given(ge=st.integers(min_value=0, max_value=40), le=st.integers(min_value=60, max_value=100), value=st.integers(min_value=40, max_value=60))
+    @given(
+        ge=st.integers(min_value=0, max_value=40),
+        le=st.integers(min_value=60, max_value=100),
+        value=st.integers(min_value=40, max_value=60),
+    )
     def test_validate_combined_ge_le(self, ge, le, value):
         """Combined range constraints work together."""
         schema = PropertySchema(ge=ge, le=le)
@@ -143,7 +169,14 @@ class TestValidateValue:
             validate_value(value, schema, "even")
         assert "even" in str(exc_info.value)
 
-    @given(value=st.one_of(st.text(), st.integers(), st.none(), st.dictionaries(st.text(), st.integers())))
+    @given(
+        value=st.one_of(
+            st.text(),
+            st.integers(),
+            st.none(),
+            st.dictionaries(st.text(), st.integers()),
+        )
+    )
     def test_validate_no_constraints_passes_anything(self, value):
         """Schema with no constraints accepts any value."""
         schema = PropertySchema()
@@ -243,7 +276,9 @@ class TestResourceWithSchema:
         registry.define("port", type_=int)
 
         with pytest.raises(ValidationError):
-            Resource(name=name, attributes={"port": "invalid"}, schema_registry=registry)
+            Resource(
+                name=name, attributes={"port": "invalid"}, schema_registry=registry
+            )
 
 
 class TestResourceTreeWithSchema:
@@ -267,7 +302,11 @@ class TestResourceTreeWithSchema:
         with pytest.raises(ValidationError):
             tree.root.set_attribute("environment", "invalid")
 
-    @given(root=valid_name, child=valid_name, port=st.integers(min_value=1, max_value=65535))
+    @given(
+        root=valid_name,
+        child=valid_name,
+        port=st.integers(min_value=1, max_value=65535),
+    )
     def test_tree_create_validates_attributes(self, root, child, port):
         """ResourceTree.create validates initial attributes."""
         tree = ResourceTree(root_name=root)

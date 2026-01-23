@@ -38,7 +38,13 @@ class TestToDict:
         assert data["attributes"] == {}
         assert data["children"] == {}
 
-    @given(root=valid_name, key1=valid_name, key2=valid_name, val1=st.text(max_size=20), val2=st.text(max_size=20))
+    @given(
+        root=valid_name,
+        key1=valid_name,
+        key2=valid_name,
+        val1=st.text(max_size=20),
+        val2=st.text(max_size=20),
+    )
     def test_tree_with_attributes_to_dict(self, root, key1, key2, val1, val2):
         """Attributes are preserved in serialization."""
         if key1 == key2:
@@ -52,7 +58,13 @@ class TestToDict:
         assert data["attributes"][key1] == val1
         assert data["attributes"][key2] == val2
 
-    @given(root=valid_name, region=valid_name, server=valid_name, name_val=st.text(max_size=20), port_val=st.integers())
+    @given(
+        root=valid_name,
+        region=valid_name,
+        server=valid_name,
+        name_val=st.text(max_size=20),
+        port_val=st.integers(),
+    )
     def test_tree_with_children_to_dict(self, root, region, server, name_val, port_val):
         """Children are serialized recursively."""
         tree = ResourceTree(root_name=root)
@@ -164,7 +176,7 @@ class TestToJson:
             tree.to_json(path)
 
             # Verify file exists and is valid JSON
-            with open(path) as f:
+            with Path(path).open() as f:
                 data = json.load(f)
 
             assert data["name"] == root
@@ -183,7 +195,7 @@ class TestToJson:
         try:
             tree.to_json(path)
 
-            with open(path) as f:
+            with Path(path).open() as f:
                 content = f.read()
 
             # Should be indented (multiple lines)
@@ -216,7 +228,13 @@ class TestFromJson:
         finally:
             Path(path).unlink(missing_ok=True)
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, host=st.text(min_size=1, max_size=20), port=st.integers())
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        host=st.text(min_size=1, max_size=20),
+        port=st.integers(),
+    )
     def test_json_roundtrip(self, root, child1, child2, host, port):
         """to_json followed by from_json preserves the tree."""
         if child1 == child2:
@@ -256,7 +274,10 @@ class TestComplexTypes:
         assert settings["db"]["host"] == host
         assert settings["db"]["port"] == port
 
-    @given(root=valid_name, tags=st.lists(st.text(min_size=1, max_size=10), min_size=1, max_size=5))
+    @given(
+        root=valid_name,
+        tags=st.lists(st.text(min_size=1, max_size=10), min_size=1, max_size=5),
+    )
     def test_list_attributes(self, root, tags):
         """Lists in attributes are preserved."""
         tree = ResourceTree(root_name=root)

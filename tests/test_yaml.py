@@ -9,7 +9,29 @@ from hypothesis import strategies as st
 from hrcp import ResourceTree
 
 # YAML reserved words to avoid
-YAML_RESERVED = {"null", "true", "false", "yes", "no", "on", "off", "Null", "True", "False", "Yes", "No", "On", "Off", "NULL", "TRUE", "FALSE", "YES", "NO", "ON", "OFF"}
+YAML_RESERVED = {
+    "null",
+    "true",
+    "false",
+    "yes",
+    "no",
+    "on",
+    "off",
+    "Null",
+    "True",
+    "False",
+    "Yes",
+    "No",
+    "On",
+    "Off",
+    "NULL",
+    "TRUE",
+    "FALSE",
+    "YES",
+    "NO",
+    "ON",
+    "OFF",
+}
 
 # Strategy for valid resource names (ASCII alphanumeric, starting with letter, avoiding YAML reserved)
 valid_name = st.text(
@@ -36,7 +58,11 @@ attr_value = st.one_of(
 class TestYAMLExport:
     """Test YAML export functionality."""
 
-    @given(root=valid_name, name=safe_string, port=st.integers(min_value=1, max_value=65535))
+    @given(
+        root=valid_name,
+        name=safe_string,
+        port=st.integers(min_value=1, max_value=65535),
+    )
     def test_to_yaml_returns_string(self, root, name, port):
         """to_yaml() returns a YAML string."""
         tree = ResourceTree(root_name=root)
@@ -49,6 +75,7 @@ class TestYAMLExport:
         assert len(yaml_str) > 0
         # Should be parseable back
         import yaml
+
         data = yaml.safe_load(yaml_str)
         assert data["name"] == root
 
@@ -61,6 +88,7 @@ class TestYAMLExport:
         yaml_str = tree.to_yaml()
 
         import yaml
+
         data = yaml.safe_load(yaml_str)
         assert child in data["children"]
         assert data["children"][child]["attributes"]["value"] == value
@@ -74,6 +102,7 @@ class TestYAMLExport:
         yaml_str = tree.to_yaml()
 
         import yaml
+
         data = yaml.safe_load(yaml_str)
         assert data["attributes"]["tags"] == tags
 
@@ -93,6 +122,7 @@ class TestYAMLExport:
             assert len(content) > 0
 
             import yaml
+
             data = yaml.safe_load(content)
             assert data["name"] == root
         finally:
@@ -152,7 +182,9 @@ class TestYAMLRoundTrip:
         role=safe_string,
         env=safe_string,
     )
-    def test_yaml_round_trip_preserves_data(self, root, child, grandchild, name_val, size, role, env):
+    def test_yaml_round_trip_preserves_data(
+        self, root, child, grandchild, name_val, size, role, env
+    ):
         """Tree -> YAML -> Tree preserves all data."""
         original = ResourceTree(root_name=root)
         original.create(f"/{root}/{child}", attributes={"name": name_val, "size": size})

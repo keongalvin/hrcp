@@ -157,7 +157,11 @@ class TestJSONSchemaExport:
         assert props["items"]["type"] == "array"
         assert props["config"]["type"] == "object"
 
-    @given(key=valid_name, ge=st.integers(min_value=1, max_value=100), le=st.integers(min_value=101, max_value=65535))
+    @given(
+        key=valid_name,
+        ge=st.integers(min_value=1, max_value=100),
+        le=st.integers(min_value=101, max_value=65535),
+    )
     def test_json_schema_constraints(self, key, ge, le):
         """Constraints (ge, le) map to JSON Schema validation."""
         registry = SchemaRegistry()
@@ -169,7 +173,12 @@ class TestJSONSchemaExport:
         assert prop_schema["minimum"] == ge
         assert prop_schema["maximum"] == le
 
-    @given(key=valid_name, choices=st.lists(st.text(min_size=1, max_size=10), min_size=2, max_size=4, unique=True))
+    @given(
+        key=valid_name,
+        choices=st.lists(
+            st.text(min_size=1, max_size=10), min_size=2, max_size=4, unique=True
+        ),
+    )
     def test_json_schema_choices(self, key, choices):
         """Choices map to JSON Schema enum."""
         registry = SchemaRegistry()
