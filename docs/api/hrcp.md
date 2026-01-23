@@ -9,8 +9,7 @@ from hrcp import (
     ResourceTree,
     Resource,
     PropagationMode,
-    get_effective_value,
-    get_value_with_provenance,
+    get_value,
     Provenance,
     ValidationError,
 )
@@ -67,9 +66,7 @@ from hrcp import (
 
 ## Functions
 
-::: hrcp.get_effective_value
-
-::: hrcp.get_value_with_provenance
+::: hrcp.get_value
 
 ## Exceptions
 

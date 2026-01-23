@@ -1,6 +1,6 @@
 site_name: HRCP
 site_description: Hierarchical Resource Configuration with Provenance
-site_url: https://keongalvin.github.io/hrcp
+site_url: https://hrcp.readthedocs.io/en/latest/
 repo_url: https://github.com/keongalvin/hrcp
 repo_name: keongalvin/hrcp
 

@@ -406,7 +406,7 @@ print([r.path for r in missing])
 Search results work seamlessly with propagation:
 
 ```python
-from hrcp import get_effective_value, PropagationMode
+from hrcp import get_value, PropagationMode
 
 tree = ResourceTree(root_name="platform")
 tree.root.set_attribute("timeout", 30)
@@ -420,7 +420,7 @@ tree.create("/platform/region-b/db", attributes={"type": "database", "timeout": 
 # Find all API services and get their effective timeouts
 apis = tree.find(type="api")
 for api in apis:
-    timeout = get_effective_value(api, "timeout", PropagationMode.DOWN)
+    timeout = get_value(api, "timeout", PropagationMode.DOWN)
     print(f"{api.path}: timeout={timeout}")
 # /platform/region-a/api: timeout=60 (local override)
 # /platform/region-b/api: timeout=30 (inherited from root)

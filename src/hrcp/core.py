@@ -565,11 +565,11 @@ class ResourceTree:
             List of values from matching resources (excludes None values).
         """
         from hrcp.propagation import PropagationMode
-        from hrcp.propagation import get_effective_value
+        from hrcp.provenance import get_value
 
         results: list[Any] = []
         for resource in self.query(pattern):
-            value = get_effective_value(resource, key, mode)
+            value = get_value(resource, key, mode)
             if mode == PropagationMode.UP:
                 # UP returns a list, extend if not empty
                 if value:

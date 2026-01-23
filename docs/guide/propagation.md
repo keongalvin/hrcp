@@ -16,7 +16,7 @@ Propagation modes control how attribute values flow through the resource tree. C
 Values cascade from parent to children. The **closest ancestor** with the attribute wins.
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_effective_value
+from hrcp import ResourceTree, PropagationMode, get_value
 
 tree = ResourceTree(root_name="org")
 tree.root.set_attribute("timeout", 30)
@@ -26,16 +26,16 @@ tree.create("/org/team/project")
 tree.create("/org/team/project/service")
 
 # Each resource inherits from closest ancestor with the value
-root_timeout = get_effective_value(tree.root, "timeout", PropagationMode.DOWN)
+root_timeout = get_value(tree.root, "timeout", PropagationMode.DOWN)
 # 30 - set locally
 
-team_timeout = get_effective_value(tree.get("/org/team"), "timeout", PropagationMode.DOWN)
+team_timeout = get_value(tree.get("/org/team"), "timeout", PropagationMode.DOWN)
 # 60 - set locally (overrides parent)
 
-project_timeout = get_effective_value(tree.get("/org/team/project"), "timeout", PropagationMode.DOWN)
+project_timeout = get_value(tree.get("/org/team/project"), "timeout", PropagationMode.DOWN)
 # 60 - inherited from /org/team
 
-service_timeout = get_effective_value(tree.get("/org/team/project/service"), "timeout", PropagationMode.DOWN)
+service_timeout = get_value(tree.get("/org/team/project/service"), "timeout", PropagationMode.DOWN)
 # 60 - inherited from /org/team (closest ancestor)
 ```
 
@@ -60,12 +60,12 @@ tree.create("/company/sales", attributes={"headcount": 30})
 
 # Aggregate from all descendants
 company = tree.root
-headcounts = get_effective_value(company, "headcount", PropagationMode.UP)
+headcounts = get_value(company, "headcount", PropagationMode.UP)
 # [50, 15, 10, 30] - all values from subtree
 
 # Get from a subtree
 eng = tree.get("/company/eng")
-eng_headcounts = get_effective_value(eng, "headcount", PropagationMode.UP)
+eng_headcounts = get_value(eng, "headcount", PropagationMode.UP)
 # [50, 15, 10] - only engineering subtree
 ```
 
@@ -108,7 +108,7 @@ tree.create("/platform/prod", attributes={
 })
 
 prod = tree.get("/platform/prod")
-config = get_effective_value(prod, "config", PropagationMode.MERGE_DOWN)
+config = get_value(prod, "config", PropagationMode.MERGE_DOWN)
 # {
 #     "database": {
 #         "host": "prod.db.internal",  # overridden
@@ -148,11 +148,11 @@ tree.create("/org/team")
 team = tree.get("/org/team")
 
 # NONE returns only local value
-local = get_effective_value(team, "global_id", PropagationMode.NONE)
+local = get_value(team, "global_id", PropagationMode.NONE)
 # None - not set on this resource
 
 # DOWN would inherit
-inherited = get_effective_value(team, "global_id", PropagationMode.DOWN)
+inherited = get_value(team, "global_id", PropagationMode.DOWN)
 # "ORG-001" - inherited from root
 ```
 

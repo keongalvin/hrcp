@@ -5,7 +5,8 @@ from hypothesis import strategies as st
 
 from hrcp.core import ResourceTree
 from hrcp.propagation import PropagationMode
-from hrcp.propagation import get_effective_value
+from hrcp.provenance import Provenance
+from hrcp.provenance import get_value
 
 # Strategy for valid resource names
 valid_name = st.text(
@@ -42,7 +43,7 @@ class TestPropagationDown:
         tree.root.set_attribute(key, value)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.DOWN)
+        result = get_value(child, key, PropagationMode.DOWN)
 
         assert result == value
 
@@ -55,7 +56,7 @@ class TestPropagationDown:
         tree.create(path)
 
         leaf = tree.get(path)
-        result = get_effective_value(leaf, key, PropagationMode.DOWN)
+        result = get_value(leaf, key, PropagationMode.DOWN)
 
         assert result == value
 
@@ -66,7 +67,7 @@ class TestPropagationDown:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        result = get_effective_value(child, key, PropagationMode.DOWN)
+        result = get_value(child, key, PropagationMode.DOWN)
 
         assert result == child_val
 
@@ -76,7 +77,7 @@ class TestPropagationDown:
         tree = ResourceTree(root_name=root_name)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.DOWN)
+        result = get_value(child, key, PropagationMode.DOWN)
 
         assert result is None
 
@@ -86,7 +87,7 @@ class TestPropagationDown:
         tree = ResourceTree(root_name=root_name)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.DOWN, default=default)
+        result = get_value(child, key, PropagationMode.DOWN, default=default)
 
         assert result == default
 
@@ -103,7 +104,7 @@ class TestPropagationUp:
             tree.create(f"/{root_name}/{name}", attributes={key: val})
             used_values.append(val)
 
-        result = get_effective_value(tree.root, key, PropagationMode.UP)
+        result = get_value(tree.root, key, PropagationMode.UP)
 
         assert sorted(result) == sorted(used_values)
 
@@ -116,7 +117,7 @@ class TestPropagationUp:
         tree.create(f"/{root_name}/{region1}/server", attributes={key: val1})
         tree.create(f"/{root_name}/{region2}/server", attributes={key: val2})
 
-        result = get_effective_value(tree.root, key, PropagationMode.UP)
+        result = get_value(tree.root, key, PropagationMode.UP)
 
         assert sorted(result) == sorted([val1, val2])
 
@@ -127,7 +128,7 @@ class TestPropagationUp:
         tree.root.set_attribute(key, root_val)
         tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        result = get_effective_value(tree.root, key, PropagationMode.UP)
+        result = get_value(tree.root, key, PropagationMode.UP)
 
         assert sorted(result) == sorted([child_val, root_val])
 
@@ -137,7 +138,7 @@ class TestPropagationUp:
         tree = ResourceTree(root_name=root_name)
         tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(tree.root, key, PropagationMode.UP)
+        result = get_value(tree.root, key, PropagationMode.UP)
 
         assert result == []
 
@@ -147,7 +148,7 @@ class TestPropagationUp:
         tree = ResourceTree(root_name=root_name)
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: value})
 
-        result = get_effective_value(child, key, PropagationMode.UP)
+        result = get_value(child, key, PropagationMode.UP)
 
         assert result == [value]
 
@@ -167,7 +168,7 @@ class TestPropagationMergeDown:
         tree.root.set_attribute("config", {k1: v1, k2: v2})
         child = tree.create(f"/{root_name}/{child_name}", attributes={"config": {k2: v3, k3: v3}})
 
-        result = get_effective_value(child, "config", PropagationMode.MERGE_DOWN)
+        result = get_value(child, "config", PropagationMode.MERGE_DOWN)
 
         # Parent's k1 preserved, child's k2 overrides, child adds k3
         assert result == {k1: v1, k2: v3, k3: v3}
@@ -181,7 +182,7 @@ class TestPropagationMergeDown:
         tree.create(f"/{root_name}/{mid_name}/{leaf_name}", attributes={"config": {"level": "server", "z": 3}})
 
         server = tree.get(f"/{root_name}/{mid_name}/{leaf_name}")
-        result = get_effective_value(server, "config", PropagationMode.MERGE_DOWN)
+        result = get_value(server, "config", PropagationMode.MERGE_DOWN)
 
         assert result == {"level": "server", "x": 1, "y": 2, "z": 3}
 
@@ -198,7 +199,7 @@ class TestPropagationMergeDown:
             attributes={"settings": {"logging": {"level": "DEBUG"}, "port": 8080}},
         )
 
-        result = get_effective_value(child, "settings", PropagationMode.MERGE_DOWN)
+        result = get_value(child, "settings", PropagationMode.MERGE_DOWN)
 
         assert result == {
             "logging": {"level": "DEBUG", "format": "json"},
@@ -213,7 +214,7 @@ class TestPropagationMergeDown:
         tree.root.set_attribute(key, value)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.MERGE_DOWN)
+        result = get_value(child, key, PropagationMode.MERGE_DOWN)
 
         assert result == value
 
@@ -224,7 +225,7 @@ class TestPropagationMergeDown:
         tree.root.set_attribute(key, {"complex": "dict"})
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        result = get_effective_value(child, key, PropagationMode.MERGE_DOWN)
+        result = get_value(child, key, PropagationMode.MERGE_DOWN)
 
         assert result == child_val
 
@@ -239,7 +240,7 @@ class TestPropagationNone:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        result = get_effective_value(child, key, PropagationMode.NONE)
+        result = get_value(child, key, PropagationMode.NONE)
 
         assert result == child_val
 
@@ -250,7 +251,7 @@ class TestPropagationNone:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.NONE)
+        result = get_value(child, key, PropagationMode.NONE)
 
         assert result is None
 
@@ -261,6 +262,54 @@ class TestPropagationNone:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_effective_value(child, key, PropagationMode.NONE, default=default)
+        result = get_value(child, key, PropagationMode.NONE, default=default)
 
         assert result == default
+
+
+class TestGetValueCombined:
+    """Test the combined get_value function with optional provenance."""
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value)
+    def test_get_value_returns_value_by_default(self, root_name, child_name, key, value):
+        """get_value returns just the value when with_provenance=False."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, value)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        result = get_value(child, key, PropagationMode.DOWN)
+
+        assert result == value
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value)
+    def test_get_value_returns_provenance_when_requested(self, root_name, child_name, key, value):
+        """get_value returns Provenance when with_provenance=True."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, value)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        result = get_value(child, key, PropagationMode.DOWN, with_provenance=True)
+
+        assert isinstance(result, Provenance)
+        assert result.value == value
+        assert result.source_path == f"/{root_name}"
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name, default=attr_value)
+    def test_get_value_respects_default(self, root_name, child_name, key, default):
+        """get_value returns default when value not found."""
+        tree = ResourceTree(root_name=root_name)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        result = get_value(child, key, PropagationMode.DOWN, default=default)
+
+        assert result == default
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name)
+    def test_get_value_provenance_none_when_not_found(self, root_name, child_name, key):
+        """get_value returns None provenance when value not found and provenance requested."""
+        tree = ResourceTree(root_name=root_name)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        result = get_value(child, key, PropagationMode.DOWN, with_provenance=True)
+
+        assert result is None

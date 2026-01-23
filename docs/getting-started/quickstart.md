@@ -49,18 +49,18 @@ api = tree.get("/platform/us-east/api")
 api.set_attribute("timeout", 60)  # US East API needs more time
 ```
 
-## Get Effective Values
+## Get Values
 
 Use propagation modes to resolve values:
 
 ```python
-from hrcp import get_effective_value, PropagationMode
+from hrcp import get_value, PropagationMode
 
 # Get a resource
 db = tree.get("/platform/us-east/db")
 
 # Get inherited value (flows DOWN from ancestors)
-timeout = get_effective_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.DOWN)
 print(timeout)  # 30 - inherited from root
 ```
 
@@ -69,9 +69,7 @@ print(timeout)  # 30 - inherited from root
 Know exactly where values come from:
 
 ```python
-from hrcp import get_value_with_provenance
-
-prov = get_value_with_provenance(db, "timeout", PropagationMode.DOWN)
+prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
 print(f"Value: {prov.value}")           # 30
 print(f"Source: {prov.source_path}")    # /platform
 print(f"Mode: {prov.mode}")             # PropagationMode.DOWN
@@ -80,12 +78,7 @@ print(f"Mode: {prov.mode}")             # PropagationMode.DOWN
 ## Complete Example
 
 ```python
-from hrcp import (
-    ResourceTree,
-    PropagationMode,
-    get_effective_value,
-    get_value_with_provenance,
-)
+from hrcp import ResourceTree, PropagationMode, get_value
 
 # Build hierarchy
 tree = ResourceTree(root_name="org")
@@ -101,18 +94,18 @@ tree.create("/org/marketing")
 api = tree.get("/org/engineering/platform/api")
 
 # Local value
-port = get_effective_value(api, "port", PropagationMode.NONE)
+port = get_value(api, "port", PropagationMode.NONE)
 print(f"Port: {port}")  # 8080
 
 # Inherited values
-tier = get_effective_value(api, "tier", PropagationMode.DOWN)
+tier = get_value(api, "tier", PropagationMode.DOWN)
 print(f"Tier: {tier}")  # premium (from /org/engineering)
 
-budget = get_effective_value(api, "budget_code", PropagationMode.DOWN)
+budget = get_value(api, "budget_code", PropagationMode.DOWN)
 print(f"Budget: {budget}")  # CORP-001 (from root)
 
 # Provenance
-prov = get_value_with_provenance(api, "tier", PropagationMode.DOWN)
+prov = get_value(api, "tier", PropagationMode.DOWN, with_provenance=True)
 print(f"Tier '{prov.value}' comes from {prov.source_path}")
 # Tier 'premium' comes from /org/engineering
 ```

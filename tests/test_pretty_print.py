@@ -1,93 +1,135 @@
-"""Tests for HRCP tree pretty printing.
+"""Tests for HRCP tree pretty printing."""
 
-Uses pure data-driven approach - no mocking or monkeypatching.
-"""
+from hypothesis import given
+from hypothesis import strategies as st
 
 from hrcp import ResourceTree
+
+# Strategy for valid resource names (alphanumeric only)
+valid_name = st.text(
+    alphabet=st.characters(whitelist_categories=("L", "N")),
+    min_size=1,
+    max_size=20,
+)
+
+# Strategy for safe string values (alphanumeric only)
+safe_string = st.text(
+    alphabet=st.characters(whitelist_categories=("L", "N")),
+    min_size=1,
+    max_size=20,
+)
+
+# Strategy for attribute values
+attr_value = st.one_of(
+    st.integers(),
+    safe_string,
+    st.booleans(),
+)
 
 
 class TestPrettyPrint:
     """Test tree pretty printing."""
 
-    def test_pretty_simple(self):
+    @given(root=valid_name, env=safe_string)
+    def test_pretty_simple(self, root, env):
         """pretty() returns string representation of tree."""
-        tree = ResourceTree(root_name="config")
-        tree.root.set_attribute("env", "prod")
+        tree = ResourceTree(root_name=root)
+        tree.root.set_attribute("env", env)
 
         output = tree.pretty()
 
-        assert "config" in output
+        assert root in output
         assert "env" in output
-        assert "prod" in output
+        assert env in output
 
-    def test_pretty_nested(self):
+    @given(root=valid_name, child=valid_name, grandchild=valid_name)
+    def test_pretty_nested(self, root, child, grandchild):
         """pretty() shows nested structure with indentation."""
-        tree = ResourceTree(root_name="org")
-        tree.create("/org/team")
-        tree.create("/org/team/alice")
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
+        tree.create(f"/{root}/{child}/{grandchild}")
 
         output = tree.pretty()
 
         # Should show hierarchy
-        assert "org" in output
-        assert "team" in output
-        assert "alice" in output
+        assert root in output
+        assert child in output
+        assert grandchild in output
 
-    def test_pretty_with_attributes(self):
+    @given(root=valid_name, child=valid_name, host=safe_string, port=st.integers())
+    def test_pretty_with_attributes(self, root, child, host, port):
         """pretty() shows attributes."""
-        tree = ResourceTree(root_name="config")
-        tree.create("/config/db", attributes={"host": "localhost", "port": 5432})
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}", attributes={"host": host, "port": port})
 
         output = tree.pretty()
 
         assert "host" in output
-        assert "localhost" in output
+        assert host in output
         assert "port" in output
-        assert "5432" in output
+        assert str(port) in output
 
-    def test_pretty_compact(self):
+    @given(root=valid_name, child1=valid_name, child2=valid_name)
+    def test_pretty_compact(self, root, child1, child2):
         """pretty(compact=True) shows compact format."""
-        tree = ResourceTree(root_name="org")
-        tree.create("/org/a")
-        tree.create("/org/b")
+        if child1 == child2:
+            child2 = child2 + "2"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child1}")
+        tree.create(f"/{root}/{child2}")
 
         output = tree.pretty(compact=True)
 
         # Compact format should still have essential info
-        assert "org" in output
+        assert root in output
 
-    def test_pretty_subtree(self):
+    @given(root=valid_name, child=valid_name, grandchild=valid_name, other=valid_name)
+    def test_pretty_subtree(self, root, child, grandchild, other):
         """pretty(path=...) shows only subtree."""
-        tree = ResourceTree(root_name="org")
-        tree.create("/org/team/alice")
-        tree.create("/org/config")
+        # Ensure names don't collide
+        if child == other:
+            other = other + "other"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}/{grandchild}")
+        tree.create(f"/{root}/{other}")
 
-        output = tree.pretty(path="/org/team")
+        output = tree.pretty(path=f"/{root}/{child}")
 
-        assert "team" in output
-        assert "alice" in output
-        # org root and config should not be in output from subtree
-        # (depending on implementation, org might be shown as context)
+        assert child in output
+        assert grandchild in output
+
+    @given(root=valid_name, key=valid_name, value=attr_value)
+    def test_pretty_with_various_attr_types(self, root, key, value):
+        """pretty() handles various attribute types."""
+        tree = ResourceTree(root_name=root)
+        tree.root.set_attribute(key, value)
+
+        output = tree.pretty()
+
+        assert root in output
+        assert key in output
 
 
 class TestRepr:
     """Test __repr__ for debugging."""
 
-    def test_resource_repr(self):
+    @given(root=valid_name, value=st.integers())
+    def test_resource_repr(self, root, value):
         """Resource has useful repr."""
-        tree = ResourceTree(root_name="config")
-        tree.root.set_attribute("x", 1)
+        tree = ResourceTree(root_name=root)
+        tree.root.set_attribute("x", value)
 
         repr_str = repr(tree.root)
 
-        assert "config" in repr_str
+        assert root in repr_str
 
-    def test_tree_repr(self):
+    @given(root=valid_name, child=valid_name)
+    def test_tree_repr(self, root, child):
         """ResourceTree has useful repr."""
-        tree = ResourceTree(root_name="org")
-        tree.create("/org/a")
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{child}")
 
         repr_str = repr(tree)
 
         assert "ResourceTree" in repr_str
-        assert "org" in repr_str
+        assert root in repr_str

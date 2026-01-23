@@ -44,20 +44,16 @@ resources = tree.query("/platform/*")
 resource.set_attribute("key", "value")
 ```
 
-### Getting Effective Values
+### Getting Values
 
 ```python
-from hrcp import PropagationMode, get_effective_value
+from hrcp import PropagationMode, get_value
 
-value = get_effective_value(resource, "key", PropagationMode.DOWN)
-```
+# Just the value
+value = get_value(resource, "key", PropagationMode.DOWN)
 
-### Getting Provenance
-
-```python
-from hrcp import get_value_with_provenance
-
-prov = get_value_with_provenance(resource, "key", PropagationMode.DOWN)
+# With provenance tracking
+prov = get_value(resource, "key", PropagationMode.DOWN, with_provenance=True)
 print(prov.value, prov.source_path)
 ```
 

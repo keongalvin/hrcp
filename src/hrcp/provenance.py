@@ -45,33 +45,52 @@ class Provenance:
     contributing_paths: list[str] = field(default_factory=list)
 
 
-def get_value_with_provenance(
+def get_value(
     resource: Resource,
     key: str,
     mode: PropagationMode,
-) -> Provenance | None:
-    """Get a configuration value along with its provenance information.
+    default: Any = None,
+    *,
+    with_provenance: bool = False,
+) -> Any | Provenance | None:
+    """Get a configuration value with optional provenance information.
+
+    This is the unified API for retrieving values based on propagation mode.
 
     Args:
         resource: The Resource to get the value for.
         key: The attribute key.
         mode: The propagation mode to use.
+        default: Default value if attribute not found (not used for UP mode
+                 or when with_provenance=True).
+        with_provenance: If True, return a Provenance object with source
+                        tracking. If False, return just the value.
 
     Returns:
-        Provenance object containing the value and its origin information,
-        or None if the value doesn't exist (except for UP mode which
-        returns Provenance with empty list).
+        If with_provenance=False: The effective value based on propagation mode,
+            or the default if not found.
+        If with_provenance=True: Provenance object containing the value and
+            its origin information, or None if value doesn't exist (except
+            for UP mode which returns Provenance with empty list).
     """
     if mode == PropagationMode.NONE:
-        return _provenance_none(resource, key)
-    if mode == PropagationMode.DOWN:
-        return _provenance_down(resource, key)
-    if mode == PropagationMode.UP:
-        return _provenance_up(resource, key)
-    if mode == PropagationMode.MERGE_DOWN:
-        return _provenance_merge_down(resource, key)
-    msg = f"Unknown propagation mode: {mode}"
-    raise ValueError(msg)
+        prov = _provenance_none(resource, key)
+    elif mode == PropagationMode.DOWN:
+        prov = _provenance_down(resource, key)
+    elif mode == PropagationMode.UP:
+        prov = _provenance_up(resource, key)
+    elif mode == PropagationMode.MERGE_DOWN:
+        prov = _provenance_merge_down(resource, key)
+    else:
+        msg = f"Unknown propagation mode: {mode}"
+        raise ValueError(msg)
+
+    if with_provenance:
+        return prov
+
+    if prov is None:
+        return default
+    return prov.value
 
 
 def _provenance_none(resource: Resource, key: str) -> Provenance | None:

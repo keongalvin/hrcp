@@ -17,9 +17,8 @@ from hrcp.path import normalize_path
 from hrcp.path import parent_path
 from hrcp.path import split_path
 from hrcp.propagation import PropagationMode
-from hrcp.propagation import get_effective_value
 from hrcp.provenance import Provenance
-from hrcp.provenance import get_value_with_provenance
+from hrcp.provenance import get_value
 from hrcp.schema import PropertySchema
 from hrcp.schema import SchemaRegistry
 from hrcp.schema import ValidationError
@@ -35,8 +34,7 @@ __all__ = [
     "SchemaRegistry",
     "ValidationError",
     "basename",
-    "get_effective_value",
-    "get_value_with_provenance",
+    "get_value",
     "join_path",
     "match_pattern",
     "normalize_path",

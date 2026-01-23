@@ -43,7 +43,7 @@ HRCP solves this with ~2000 lines of dependency-free Python.
 ## Quick Example
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_effective_value
+from hrcp import ResourceTree, PropagationMode, get_value
 
 # Build a hierarchy
 tree = ResourceTree(root_name="platform")
@@ -55,11 +55,11 @@ tree.create("/platform/us-east/db")
 
 # Inheritance: values flow DOWN
 api = tree.get("/platform/us-east/api")
-timeout = get_effective_value(api, "timeout", PropagationMode.DOWN)
+timeout = get_value(api, "timeout", PropagationMode.DOWN)
 # timeout == 60 (local override)
 
 db = tree.get("/platform/us-east/db")
-timeout = get_effective_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.DOWN)
 # timeout == 30 (inherited from root)
 ```
 

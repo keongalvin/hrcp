@@ -7,7 +7,7 @@ Real-world examples of how HRCP solves hierarchical configuration problems.
 Manage configuration for a SaaS platform with organizations, tenants, and projects.
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_effective_value
+from hrcp import ResourceTree, PropagationMode, get_value
 
 tree = ResourceTree(root_name="platform")
 
@@ -46,13 +46,13 @@ tree.create("/platform/small-startup/app")
 # Query configuration
 analytics = tree.get("/platform/acme-corp/analytics")
 
-timeout = get_effective_value(analytics, "timeout", PropagationMode.DOWN)
+timeout = get_value(analytics, "timeout", PropagationMode.DOWN)
 # 120 (local override)
 
-rate_limit = get_effective_value(analytics, "max_requests_per_minute", PropagationMode.DOWN)
+rate_limit = get_value(analytics, "max_requests_per_minute", PropagationMode.DOWN)
 # 10000 (from tenant)
 
-features = get_effective_value(analytics, "features", PropagationMode.MERGE_DOWN)
+features = get_value(analytics, "features", PropagationMode.MERGE_DOWN)
 # {"dark_mode": False, "beta_features": False, "ai_assist": True}
 # ai_assist merged from tenant, others from platform
 ```
@@ -106,10 +106,8 @@ tree.create("/infra/staging/api", attributes={
 })
 
 # Query with provenance
-from hrcp import get_value_with_provenance
-
 api = tree.get("/infra/prod/api")
-prov = get_value_with_provenance(api, "instance_type", PropagationMode.DOWN)
+prov = get_value(api, "instance_type", PropagationMode.DOWN, with_provenance=True)
 print(f"Instance type: {prov.value} (from {prov.source_path})")
 # Instance type: t3.large (from /infra/prod)
 ```
@@ -152,9 +150,9 @@ def get_user_features(tree, user_path):
         user = tree.root  # Default to global features
     
     return {
-        "new_checkout": get_effective_value(user, "new_checkout", PropagationMode.DOWN),
-        "dark_mode": get_effective_value(user, "dark_mode", PropagationMode.DOWN),
-        "ai_suggestions": get_effective_value(user, "ai_suggestions", PropagationMode.DOWN),
+        "new_checkout": get_value(user, "new_checkout", PropagationMode.DOWN),
+        "dark_mode": get_value(user, "dark_mode", PropagationMode.DOWN),
+        "ai_suggestions": get_value(user, "ai_suggestions", PropagationMode.DOWN),
     }
 
 print(get_user_features(tree, "/features/beta/user-123"))
@@ -189,7 +187,7 @@ tree.create("/company/marketing", attributes={"budget": 200000})
 # Aggregate budgets upward
 def get_total_budget(resource):
     """Get total budget for a resource and all descendants."""
-    budgets = get_effective_value(resource, "budget", PropagationMode.UP)
+    budgets = get_value(resource, "budget", PropagationMode.UP)
     return sum(budgets) if budgets else 0
 
 print(f"Engineering total: ${get_total_budget(tree.get('/company/engineering')):,}")
@@ -224,7 +222,7 @@ tree.create("/org/engineering/secrets", attributes={
 # Get effective permissions (merge all admin lists)
 def get_effective_admins(resource):
     """Get all admins with access to this resource."""
-    admins_lists = get_effective_value(resource, "admins", PropagationMode.UP)
+    admins_lists = get_value(resource, "admins", PropagationMode.UP)
     # Flatten and dedupe
     all_admins = set()
     for admin_list in admins_lists or []:
@@ -257,8 +255,6 @@ print(has_admin_access(tree.get("/org/engineering/secrets"), "carol@company.com"
 Generate a validation report for all resources.
 
 ```python
-from hrcp import get_value_with_provenance
-
 tree = ResourceTree(root_name="services")
 
 # Define schemas
@@ -281,7 +277,7 @@ def validation_report(tree, required_attrs):
         issues = []
         
         for attr in required_attrs:
-            prov = get_value_with_provenance(resource, attr, PropagationMode.DOWN)
+            prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
             if prov.value is None:
                 issues.append(f"Missing: {attr}")
         
@@ -292,7 +288,7 @@ def validation_report(tree, required_attrs):
         else:
             print(f"\n{resource.path} ✓")
             for attr in required_attrs:
-                prov = get_value_with_provenance(resource, attr, PropagationMode.DOWN)
+                prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
                 source = "(local)" if prov.source_path == resource.path else f"(from {prov.source_path})"
                 print(f"  {attr}: {prov.value} {source}")
 
@@ -304,7 +300,7 @@ validation_report(tree, ["env", "port", "replicas"])
 Model Kubernetes namespaces with inherited resource quotas and limits:
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_effective_value, get_value_with_provenance
+from hrcp import ResourceTree, PropagationMode, get_value
 
 tree = ResourceTree(root_name="cluster")
 
@@ -357,9 +353,9 @@ def get_namespace_config(tree, namespace_path):
         return None
     
     return {
-        "quota": get_effective_value(ns, "resource_quota", PropagationMode.MERGE_DOWN),
-        "limits": get_effective_value(ns, "limit_range", PropagationMode.MERGE_DOWN),
-        "network": get_effective_value(ns, "network_policy", PropagationMode.DOWN),
+        "quota": get_value(ns, "resource_quota", PropagationMode.MERGE_DOWN),
+        "limits": get_value(ns, "limit_range", PropagationMode.MERGE_DOWN),
+        "network": get_value(ns, "network_policy", PropagationMode.DOWN),
     }
 
 # Compare prod vs dev team-api namespaces
@@ -422,9 +418,9 @@ def generate_manifest(tree, app, env):
     return {
         "app": app,
         "environment": env,
-        "replicas": get_effective_value(resource, "replicas", PropagationMode.DOWN),
-        "image_policy": get_effective_value(resource, "image_policy", PropagationMode.DOWN),
-        "resources": get_effective_value(resource, "resources", PropagationMode.MERGE_DOWN),
+        "replicas": get_value(resource, "replicas", PropagationMode.DOWN),
+        "image_policy": get_value(resource, "image_policy", PropagationMode.DOWN),
+        "resources": get_value(resource, "resources", PropagationMode.MERGE_DOWN),
     }
 
 # Generate manifests
@@ -487,11 +483,11 @@ def get_infra_config(tree, path):
     """Get full infrastructure configuration with merged tags."""
     resource = tree.get(path)
     return {
-        "provider": get_effective_value(resource, "provider", PropagationMode.DOWN),
-        "region": get_effective_value(resource, "default_region", PropagationMode.DOWN),
-        "tags": get_effective_value(resource, "tags", PropagationMode.MERGE_DOWN),
-        "monitoring": get_effective_value(resource, "monitoring", PropagationMode.MERGE_DOWN),
-        "backup": get_effective_value(resource, "backup", PropagationMode.MERGE_DOWN),
+        "provider": get_value(resource, "provider", PropagationMode.DOWN),
+        "region": get_value(resource, "default_region", PropagationMode.DOWN),
+        "tags": get_value(resource, "tags", PropagationMode.MERGE_DOWN),
+        "monitoring": get_value(resource, "monitoring", PropagationMode.MERGE_DOWN),
+        "backup": get_value(resource, "backup", PropagationMode.MERGE_DOWN),
     }
 
 # Compare AWS vs GCP prod API configs
@@ -556,12 +552,12 @@ def get_server_config(tree, server_path):
     """Get full server configuration."""
     server = tree.get(server_path)
     return {
-        "version": get_effective_value(server, "version", PropagationMode.DOWN),
-        "tick_rate": get_effective_value(server, "tick_rate", PropagationMode.DOWN),
-        "max_players": get_effective_value(server, "max_players", PropagationMode.DOWN),
-        "latency_target": get_effective_value(server, "latency_target", PropagationMode.DOWN),
-        "anti_cheat": get_effective_value(server, "anti_cheat", PropagationMode.MERGE_DOWN),
-        "matchmaking": get_effective_value(server, "matchmaking", PropagationMode.MERGE_DOWN),
+        "version": get_value(server, "version", PropagationMode.DOWN),
+        "tick_rate": get_value(server, "tick_rate", PropagationMode.DOWN),
+        "max_players": get_value(server, "max_players", PropagationMode.DOWN),
+        "latency_target": get_value(server, "latency_target", PropagationMode.DOWN),
+        "anti_cheat": get_value(server, "anti_cheat", PropagationMode.MERGE_DOWN),
+        "matchmaking": get_value(server, "matchmaking", PropagationMode.MERGE_DOWN),
     }
 
 # Compare ranked vs casual in NA-East
@@ -622,11 +618,11 @@ def get_product_policies(tree, category_path):
     """Get all policies applicable to a product category."""
     category = tree.get(category_path)
     return {
-        "currency": get_effective_value(category, "currency", PropagationMode.DOWN),
-        "tax_rate": get_effective_value(category, "tax_rate", PropagationMode.DOWN),
-        "shipping": get_effective_value(category, "shipping", PropagationMode.MERGE_DOWN),
-        "warranty": get_effective_value(category, "warranty", PropagationMode.MERGE_DOWN),
-        "return_policy": get_effective_value(category, "return_policy", PropagationMode.MERGE_DOWN),
+        "currency": get_value(category, "currency", PropagationMode.DOWN),
+        "tax_rate": get_value(category, "tax_rate", PropagationMode.DOWN),
+        "shipping": get_value(category, "shipping", PropagationMode.MERGE_DOWN),
+        "warranty": get_value(category, "warranty", PropagationMode.MERGE_DOWN),
+        "return_policy": get_value(category, "return_policy", PropagationMode.MERGE_DOWN),
     }
 
 # Compare policies

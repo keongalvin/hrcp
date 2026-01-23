@@ -8,7 +8,7 @@ In hierarchical systems, a value might come from anywhere in the ancestry chain:
 
 ```
 /platform           timeout: 30
-  /us-east          
+  /us-east
     /api            timeout: 60  ← Where does this come from?
     /db                          ← What about this one?
 ```
@@ -18,11 +18,7 @@ Without provenance, debugging configuration issues means manually tracing throug
 ## Basic Usage
 
 ```python
-from hrcp import (
-    ResourceTree,
-    PropagationMode,
-    get_value_with_provenance,
-)
+from hrcp import ResourceTree, PropagationMode, get_value
 
 tree = ResourceTree(root_name="platform")
 tree.root.set_attribute("timeout", 30)
@@ -31,7 +27,7 @@ tree.create("/platform/us-east/db")
 
 # Get value with provenance
 db = tree.get("/platform/us-east/db")
-prov = get_value_with_provenance(db, "timeout", PropagationMode.DOWN)
+prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
 
 print(prov.value)        # 30
 print(prov.source_path)  # "/platform"
@@ -40,7 +36,7 @@ print(prov.mode)         # PropagationMode.DOWN
 
 ## The Provenance Object
 
-`get_value_with_provenance` returns a `Provenance` object with these attributes:
+`get_value(..., with_provenance=True)` returns a `Provenance` object with these attributes:
 
 | Attribute | Description |
 |-----------|-------------|
@@ -61,7 +57,7 @@ tree.create("/org/team", attributes={"env": "staging"})
 tree.create("/org/team/project")
 
 project = tree.get("/org/team/project")
-prov = get_value_with_provenance(project, "env", PropagationMode.DOWN)
+prov = get_value(project, "env", PropagationMode.DOWN, with_provenance=True)
 
 print(prov.value)        # "staging"
 print(prov.source_path)  # "/org/team" - closest ancestor with value
@@ -72,7 +68,7 @@ print(prov.source_path)  # "/org/team" - closest ancestor with value
 Shows if the value is set locally:
 
 ```python
-prov = get_value_with_provenance(project, "env", PropagationMode.NONE)
+prov = get_value(project, "env", PropagationMode.NONE, with_provenance=True)
 
 print(prov.value)        # None
 print(prov.source_path)  # None - not set locally
@@ -87,7 +83,7 @@ tree = ResourceTree(root_name="company")
 tree.create("/company/eng", attributes={"budget": 100000})
 tree.create("/company/sales", attributes={"budget": 50000})
 
-prov = get_value_with_provenance(tree.root, "budget", PropagationMode.UP)
+prov = get_value(tree.root, "budget", PropagationMode.UP, with_provenance=True)
 print(prov.value)  # [100000, 50000]
 # source_path shows the aggregation point
 ```
@@ -109,7 +105,7 @@ tree.create("/platform/prod", attributes={
 })
 
 prod = tree.get("/platform/prod")
-prov = get_value_with_provenance(prod, "config", PropagationMode.MERGE_DOWN)
+prov = get_value(prod, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
 
 print(prov.value)
 # {"timeout": 60, "retries": 3}
@@ -126,8 +122,8 @@ When a service has unexpected configuration:
 def debug_config(resource, attr):
     """Print where a config value comes from."""
     for mode in [PropagationMode.NONE, PropagationMode.DOWN]:
-        prov = get_value_with_provenance(resource, attr, mode)
-        if prov.value is not None:
+        prov = get_value(resource, attr, mode, with_provenance=True)
+        if prov and prov.value is not None:
             print(f"{attr} = {prov.value}")
             print(f"  Source: {prov.source_path}")
             print(f"  Mode: {prov.mode.name}")
@@ -149,10 +145,10 @@ def audit_resource(resource, attributes):
     """Audit configuration sources for a resource."""
     print(f"\nConfiguration audit for {resource.path}")
     print("-" * 50)
-    
+
     for attr in attributes:
-        prov = get_value_with_provenance(resource, attr, PropagationMode.DOWN)
-        if prov.value is not None:
+        prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
+        if prov and prov.value is not None:
             local = "(local)" if prov.source_path == resource.path else "(inherited)"
             print(f"  {attr}: {prov.value} {local}")
             if prov.source_path != resource.path:
@@ -179,15 +175,18 @@ Compare effective configuration between resources:
 def config_diff(resource1, resource2, attributes):
     """Compare configuration between two resources."""
     print(f"Comparing {resource1.path} vs {resource2.path}\n")
-    
+
     for attr in attributes:
-        p1 = get_value_with_provenance(resource1, attr, PropagationMode.DOWN)
-        p2 = get_value_with_provenance(resource2, attr, PropagationMode.DOWN)
-        
-        if p1.value != p2.value:
+        p1 = get_value(resource1, attr, PropagationMode.DOWN, with_provenance=True)
+        p2 = get_value(resource2, attr, PropagationMode.DOWN, with_provenance=True)
+
+        v1 = p1.value if p1 else None
+        v2 = p2.value if p2 else None
+
+        if v1 != v2:
             print(f"  {attr}:")
-            print(f"    {resource1.path}: {p1.value} (from {p1.source_path})")
-            print(f"    {resource2.path}: {p2.value} (from {p2.source_path})")
+            print(f"    {resource1.path}: {v1} (from {p1.source_path if p1 else 'N/A'})")
+            print(f"    {resource2.path}: {v2} (from {p2.source_path if p2 else 'N/A'})")
 ```
 
 ## Best Practices

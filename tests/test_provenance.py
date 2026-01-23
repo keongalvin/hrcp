@@ -6,7 +6,7 @@ from hypothesis import strategies as st
 from hrcp.core import ResourceTree
 from hrcp.propagation import PropagationMode
 from hrcp.provenance import Provenance
-from hrcp.provenance import get_value_with_provenance
+from hrcp.provenance import get_value
 
 # Strategy for valid resource names
 valid_name = st.text(
@@ -79,7 +79,7 @@ class TestProvenanceWithDown:
         tree = ResourceTree(root_name=root_name)
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: value})
 
-        prov = get_value_with_provenance(child, key, PropagationMode.DOWN)
+        prov = get_value(child, key, PropagationMode.DOWN, with_provenance=True)
 
         assert prov.value == value
         assert prov.source_path == f"/{root_name}/{child_name}"
@@ -92,7 +92,7 @@ class TestProvenanceWithDown:
         tree.root.set_attribute(key, value)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        prov = get_value_with_provenance(child, key, PropagationMode.DOWN)
+        prov = get_value(child, key, PropagationMode.DOWN, with_provenance=True)
 
         assert prov.value == value
         assert prov.source_path == f"/{root_name}"
@@ -105,7 +105,7 @@ class TestProvenanceWithDown:
         tree.create(f"/{root_name}/{mid}/{leaf}")
 
         server = tree.get(f"/{root_name}/{mid}/{leaf}")
-        prov = get_value_with_provenance(server, key, PropagationMode.DOWN)
+        prov = get_value(server, key, PropagationMode.DOWN, with_provenance=True)
 
         assert prov.value == value
         assert prov.source_path == f"/{root_name}"
@@ -116,7 +116,7 @@ class TestProvenanceWithDown:
         tree = ResourceTree(root_name=root_name)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        prov = get_value_with_provenance(child, key, PropagationMode.DOWN)
+        prov = get_value(child, key, PropagationMode.DOWN, with_provenance=True)
 
         assert prov is None
 
@@ -133,7 +133,7 @@ class TestProvenanceWithUp:
         tree.create(f"/{root_name}/{child1}", attributes={key: val1})
         tree.create(f"/{root_name}/{child2}", attributes={key: val2})
 
-        prov = get_value_with_provenance(tree.root, key, PropagationMode.UP)
+        prov = get_value(tree.root, key, PropagationMode.UP, with_provenance=True)
 
         assert sorted(prov.value) == sorted([val1, val2])
         assert f"/{root_name}/{child1}" in prov.contributing_paths
@@ -146,7 +146,7 @@ class TestProvenanceWithUp:
         tree.root.set_attribute(key, root_val)
         tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        prov = get_value_with_provenance(tree.root, key, PropagationMode.UP)
+        prov = get_value(tree.root, key, PropagationMode.UP, with_provenance=True)
 
         assert f"/{root_name}" in prov.contributing_paths
         assert f"/{root_name}/{child_name}" in prov.contributing_paths
@@ -157,7 +157,7 @@ class TestProvenanceWithUp:
         tree = ResourceTree(root_name=root_name)
         tree.create(f"/{root_name}/{child_name}")
 
-        prov = get_value_with_provenance(tree.root, key, PropagationMode.UP)
+        prov = get_value(tree.root, key, PropagationMode.UP, with_provenance=True)
 
         assert prov.value == []
         assert prov.contributing_paths == []
@@ -173,7 +173,7 @@ class TestProvenanceWithMergeDown:
         tree.root.set_attribute("config", {"a": 1, "b": 2})
         child = tree.create(f"/{root_name}/{child_name}", attributes={"config": {"b": 3, "c": 4}})
 
-        prov = get_value_with_provenance(child, "config", PropagationMode.MERGE_DOWN)
+        prov = get_value(child, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
 
         assert prov.value == {"a": 1, "b": 3, "c": 4}
         assert prov.key_sources["a"] == f"/{root_name}"
@@ -192,7 +192,7 @@ class TestProvenanceWithMergeDown:
             attributes={"config": {"logging": {"level": "DEBUG"}}},
         )
 
-        prov = get_value_with_provenance(child, "config", PropagationMode.MERGE_DOWN)
+        prov = get_value(child, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
 
         # For nested keys, use dot notation in key_sources
         assert prov.key_sources["logging.level"] == f"/{root_name}/{child_name}"
@@ -209,7 +209,7 @@ class TestProvenanceWithNone:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
 
-        prov = get_value_with_provenance(child, key, PropagationMode.NONE)
+        prov = get_value(child, key, PropagationMode.NONE, with_provenance=True)
 
         assert prov.value == child_val
         assert prov.source_path == f"/{root_name}/{child_name}"
@@ -221,6 +221,6 @@ class TestProvenanceWithNone:
         tree.root.set_attribute(key, parent_val)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        prov = get_value_with_provenance(child, key, PropagationMode.NONE)
+        prov = get_value(child, key, PropagationMode.NONE, with_provenance=True)
 
         assert prov is None

@@ -89,19 +89,19 @@ Attributes can be any JSON-serializable value: strings, numbers, booleans, lists
 See [Propagation Modes](propagation.md) for details.
 
 ```python
-from hrcp import PropagationMode, get_effective_value
+from hrcp import PropagationMode, get_value
 
 # DOWN: Inherit from ancestors
-value = get_effective_value(resource, "timeout", PropagationMode.DOWN)
+value = get_value(resource, "timeout", PropagationMode.DOWN)
 
 # UP: Aggregate from descendants  
-values = get_effective_value(resource, "headcount", PropagationMode.UP)
+values = get_value(resource, "headcount", PropagationMode.UP)
 
 # MERGE_DOWN: Deep-merge dicts from ancestors
-config = get_effective_value(resource, "config", PropagationMode.MERGE_DOWN)
+config = get_value(resource, "config", PropagationMode.MERGE_DOWN)
 
 # NONE: Local value only
-local = get_effective_value(resource, "name", PropagationMode.NONE)
+local = get_value(resource, "name", PropagationMode.NONE)
 ```
 
 ## Provenance
@@ -111,9 +111,7 @@ local = get_effective_value(resource, "name", PropagationMode.NONE)
 See [Provenance](provenance.md) for details.
 
 ```python
-from hrcp import get_value_with_provenance
-
-prov = get_value_with_provenance(resource, "timeout", PropagationMode.DOWN)
+prov = get_value(resource, "timeout", PropagationMode.DOWN, with_provenance=True)
 print(prov.value)        # The resolved value
 print(prov.source_path)  # Which resource provided it
 print(prov.mode)         # Which propagation mode was used
@@ -124,12 +122,7 @@ print(prov.mode)         # Which propagation mode was used
 Here's how all concepts work together:
 
 ```python
-from hrcp import (
-    ResourceTree,
-    PropagationMode,
-    get_effective_value,
-    get_value_with_provenance,
-)
+from hrcp import ResourceTree, PropagationMode, get_value
 
 # 1. Create a tree
 tree = ResourceTree(root_name="company")
@@ -145,14 +138,14 @@ tree.create("/company/engineering/api")
 # 4. Query with propagation
 api = tree.get("/company/engineering/api")
 
-env = get_effective_value(api, "env", PropagationMode.DOWN)
+env = get_value(api, "env", PropagationMode.DOWN)
 # "production" - inherited from root
 
-log_level = get_effective_value(api, "log_level", PropagationMode.DOWN)
+log_level = get_value(api, "log_level", PropagationMode.DOWN)
 # "DEBUG" - inherited from /company/engineering (closest ancestor)
 
 # 5. Track provenance
-prov = get_value_with_provenance(api, "log_level", PropagationMode.DOWN)
+prov = get_value(api, "log_level", PropagationMode.DOWN, with_provenance=True)
 print(f"{prov.value} from {prov.source_path}")
 # "DEBUG from /company/engineering"
 ```
