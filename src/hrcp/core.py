@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 
+from hrcp.schema import SchemaRegistry
+
 if TYPE_CHECKING:
-    from hrcp.schema import SchemaRegistry
+    pass
 
 
 class Resource:
@@ -179,11 +182,6 @@ class Resource:
         return f"Resource(name={self._name!r}, path={self.path!r})"
 
 
-from collections.abc import Iterator
-
-from hrcp.schema import SchemaRegistry
-
-
 class ResourceTree:
     """Container and manager for an HRCP resource hierarchy.
 
@@ -277,12 +275,11 @@ class ResourceTree:
             msg = f"Path not found: {path}"
             raise KeyError(msg)
 
-        missing = []
-        for key in self._schema_registry.required_fields():
-            if key not in resource.attributes:
-                missing.append(key)
-
-        return missing
+        return [
+            key
+            for key in self._schema_registry.required_fields()
+            if key not in resource.attributes
+        ]
 
     def validate_required(self, path: str) -> None:
         """Validate that all required attributes are present at a path.
@@ -310,15 +307,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree that is a deep copy of this one.
         """
-        # Use serialization for deep copy
-        data = self.to_dict()
-        cloned = ResourceTree.from_dict(data)
+        from hrcp.operations import clone
 
-        # Copy schema definitions
-        for key, schema in self._schema_registry.items():
-            cloned._schema_registry.define(key, schema)
-
-        return cloned
+        return clone(self)
 
     def clone_subtree(self, path: str) -> ResourceTree:
         """Clone a subtree rooted at the given path.
@@ -332,20 +323,9 @@ class ResourceTree:
         Raises:
             KeyError: If the path does not exist.
         """
-        resource = self.get(path)
-        if resource is None:
-            msg = f"Path not found: {path}"
-            raise KeyError(msg)
+        from hrcp.operations import clone_subtree
 
-        # Serialize just this resource and its descendants
-        data = self._resource_to_dict(resource)
-        cloned = ResourceTree.from_dict(data)
-
-        # Copy schema definitions
-        for key, schema in self._schema_registry.items():
-            cloned._schema_registry.define(key, schema)
-
-        return cloned
+        return clone_subtree(self, path)
 
     def merge(self, source: ResourceTree) -> None:
         """Merge another tree into this one.
@@ -357,24 +337,9 @@ class ResourceTree:
         Args:
             source: The tree to merge from.
         """
-        self._merge_resource(self.root, source.root)
+        from hrcp.operations import merge
 
-    def _merge_resource(self, target: Resource, source: Resource) -> None:
-        """Recursively merge source resource into target."""
-        # Merge attributes
-        for key, value in source.attributes.items():
-            target.set_attribute(key, value)
-
-        # Merge children
-        for name, source_child in source.children.items():
-            target_child = target.get_child(name)
-            if target_child is None:
-                # Clone the source child and add it
-                child_data = self._resource_to_dict(source_child)
-                self._load_children(self, target, {name: child_data})
-            else:
-                # Recursively merge
-                self._merge_resource(target_child, source_child)
+        merge(self, source)
 
     @property
     def root(self) -> Resource:
@@ -542,11 +507,11 @@ class ResourceTree:
         """
         from hrcp.wildcards import match_pattern
 
-        results: list[Resource] = []
-        for resource in self.walk():
-            if match_pattern(resource.path, pattern):
-                results.append(resource)
-        return results
+        return [
+            resource
+            for resource in self.walk()
+            if match_pattern(resource.path, pattern)
+        ]
 
     def query_values(
         self,
@@ -584,18 +549,15 @@ class ResourceTree:
         Returns:
             A dict representation of the tree that can be serialized to JSON.
         """
-        return self._resource_to_dict(self._root)
+        from hrcp.serialization import tree_to_dict
+
+        return tree_to_dict(self)
 
     def _resource_to_dict(self, resource: Resource) -> dict[str, Any]:
         """Recursively serialize a Resource to a dict."""
-        return {
-            "name": resource.name,
-            "attributes": dict(resource.attributes),
-            "children": {
-                name: self._resource_to_dict(child)
-                for name, child in resource.children.items()
-            },
-        }
+        from hrcp.serialization import resource_to_dict
+
+        return resource_to_dict(resource)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ResourceTree:
@@ -607,13 +569,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree with the data.
         """
-        tree = cls(root_name=data["name"])
-        # Set root attributes
-        for key, value in data.get("attributes", {}).items():
-            tree._root._attributes[key] = value  # Bypass validation for load
-        # Recursively create children
-        cls._load_children(tree, tree._root, data.get("children", {}))
-        return tree
+        from hrcp.serialization import tree_from_dict
+
+        return tree_from_dict(data)
 
     @classmethod
     def _load_children(
@@ -623,17 +581,9 @@ class ResourceTree:
         children_data: dict[str, dict[str, Any]],
     ) -> None:
         """Recursively load children from dict data."""
-        for child_data in children_data.values():
-            child = Resource(
-                name=child_data["name"],
-                schema_registry=tree._schema_registry,
-            )
-            # Set attributes bypassing validation
-            for key, value in child_data.get("attributes", {}).items():
-                child._attributes[key] = value
-            parent.add_child(child)
-            # Recurse for grandchildren
-            cls._load_children(tree, child, child_data.get("children", {}))
+        from hrcp.serialization import load_children
+
+        load_children(tree, parent, children_data)
 
     def to_json(self, path: str, indent: int = 2) -> None:
         """Save the tree to a JSON file.
@@ -642,11 +592,9 @@ class ResourceTree:
             path: Path to the output JSON file.
             indent: Indentation level for human-readable output.
         """
-        import json
+        from hrcp.serialization import tree_to_json
 
-        data = self.to_dict()
-        with open(path, "w") as f:
-            json.dump(data, f, indent=indent)
+        tree_to_json(self, path, indent)
 
     @classmethod
     def from_json(cls, path: str) -> ResourceTree:
@@ -658,11 +606,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree loaded from the file.
         """
-        import json
+        from hrcp.serialization import tree_from_json
 
-        with open(path) as f:
-            data = json.load(f)
-        return cls.from_dict(data)
+        return tree_from_json(path)
 
     def to_yaml(self, path: str | None = None) -> str:
         """Serialize the tree to a YAML string.
@@ -673,17 +619,9 @@ class ResourceTree:
         Returns:
             A YAML string representation of the tree.
         """
-        import yaml
+        from hrcp.serialization import tree_to_yaml
 
-        data = self.to_dict()
-        yaml_str = yaml.dump(data, default_flow_style=False, sort_keys=False)
-
-        if path is not None:
-            from pathlib import Path
-
-            Path(path).write_text(yaml_str)
-
-        return yaml_str
+        return tree_to_yaml(self, path)
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> ResourceTree:
@@ -695,10 +633,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree with the data.
         """
-        import yaml
+        from hrcp.serialization import tree_from_yaml
 
-        data = yaml.safe_load(yaml_str)
-        return cls.from_dict(data)
+        return tree_from_yaml(yaml_str)
 
     @classmethod
     def from_yaml_file(cls, path: str) -> ResourceTree:
@@ -710,10 +647,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree loaded from the file.
         """
-        from pathlib import Path
+        from hrcp.serialization import tree_from_yaml_file
 
-        yaml_str = Path(path).read_text()
-        return cls.from_yaml(yaml_str)
+        return tree_from_yaml_file(path)
 
     def to_toml(self, path: str | None = None) -> str:
         """Serialize the tree to a TOML string.
@@ -727,31 +663,9 @@ class ResourceTree:
         Returns:
             A TOML string representation of the tree.
         """
-        import tomli_w
+        from hrcp.serialization import tree_to_toml
 
-        data = self._to_toml_dict(self.root)
-        toml_str = tomli_w.dumps(data)
-
-        if path is not None:
-            from pathlib import Path
-
-            Path(path).write_text(toml_str)
-
-        return toml_str
-
-    def _to_toml_dict(self, resource: Resource) -> dict[str, Any]:
-        """Convert resource to TOML-compatible dict."""
-        result: dict[str, Any] = {}
-
-        # Add attributes at this level
-        for key, value in resource.attributes.items():
-            result[key] = value
-
-        # Add children as nested dicts
-        for name, child in resource.children.items():
-            result[name] = self._to_toml_dict(child)
-
-        return result
+        return tree_to_toml(self, path)
 
     @classmethod
     def from_toml(cls, toml_str: str, root_name: str = "root") -> ResourceTree:
@@ -764,41 +678,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree with the data.
         """
-        import tomllib
+        from hrcp.serialization import tree_from_toml
 
-        data = tomllib.loads(toml_str)
-        return cls._from_toml_dict(data, root_name)
-
-    @classmethod
-    def _from_toml_dict(cls, data: dict[str, Any], root_name: str) -> ResourceTree:
-        """Create tree from TOML-style dict."""
-        tree = cls(root_name=root_name)
-
-        for key, value in data.items():
-            if isinstance(value, dict):
-                # This is a child resource
-                cls._load_toml_child(tree, tree.root, key, value)
-            else:
-                # This is an attribute
-                tree.root.set_attribute(key, value)
-
-        return tree
-
-    @classmethod
-    def _load_toml_child(
-        cls, tree: ResourceTree, parent: Resource, name: str, data: dict[str, Any]
-    ) -> None:
-        """Recursively load TOML child resources."""
-        from hrcp.core import Resource
-
-        child = Resource(name=name, schema_registry=tree._schema_registry)
-        parent.add_child(child)
-
-        for key, value in data.items():
-            if isinstance(value, dict):
-                cls._load_toml_child(tree, child, key, value)
-            else:
-                child.set_attribute(key, value)
+        return tree_from_toml(toml_str, root_name)
 
     @classmethod
     def from_toml_file(cls, path: str, root_name: str = "root") -> ResourceTree:
@@ -811,10 +693,9 @@ class ResourceTree:
         Returns:
             A new ResourceTree loaded from the file.
         """
-        from pathlib import Path
+        from hrcp.serialization import tree_from_toml_file
 
-        toml_str = Path(path).read_text()
-        return cls.from_toml(toml_str, root_name)
+        return tree_from_toml_file(path, root_name)
 
     def find(self, path: str | None = None, **criteria: Any) -> list[Resource]:
         """Find resources matching attribute criteria.
@@ -826,17 +707,9 @@ class ResourceTree:
         Returns:
             List of resources where all criteria match.
         """
-        results = []
-        start = self.get(path) if path else self.root
+        from hrcp.search import find
 
-        if start is None:
-            return results
-
-        for resource in self._walk_resource(start):
-            if self._matches_criteria(resource, criteria):
-                results.append(resource)
-
-        return results
+        return find(self, path, **criteria)
 
     def find_first(self, path: str | None = None, **criteria: Any) -> Resource | None:
         """Find first resource matching attribute criteria.
@@ -848,16 +721,9 @@ class ResourceTree:
         Returns:
             First matching resource, or None if not found.
         """
-        start = self.get(path) if path else self.root
+        from hrcp.search import find_first
 
-        if start is None:
-            return None
-
-        for resource in self._walk_resource(start):
-            if self._matches_criteria(resource, criteria):
-                return resource
-
-        return None
+        return find_first(self, path, **criteria)
 
     def filter(
         self,
@@ -873,17 +739,9 @@ class ResourceTree:
         Returns:
             List of resources where predicate returns True.
         """
-        results = []
-        start = self.get(path) if path else self.root
+        from hrcp.search import filter_resources
 
-        if start is None:
-            return results
-
-        for resource in self._walk_resource(start):
-            if predicate(resource):
-                results.append(resource)
-
-        return results
+        return filter_resources(self, predicate, path)
 
     def exists(self, path: str | None = None, **criteria: Any) -> bool:
         """Check if any resource matches the criteria.
@@ -895,7 +753,9 @@ class ResourceTree:
         Returns:
             True if at least one matching resource exists.
         """
-        return self.find_first(path=path, **criteria) is not None
+        from hrcp.search import exists
+
+        return exists(self, path, **criteria)
 
     def count(self, path: str | None = None, **criteria: Any) -> int:
         """Count resources matching the criteria.
@@ -907,14 +767,9 @@ class ResourceTree:
         Returns:
             Number of matching resources.
         """
-        return len(self.find(path=path, **criteria))
+        from hrcp.search import count
 
-    def _matches_criteria(self, resource: Resource, criteria: dict[str, Any]) -> bool:
-        """Check if resource matches all criteria."""
-        for key, value in criteria.items():
-            if resource.attributes.get(key) != value:
-                return False
-        return True
+        return count(self, path, **criteria)
 
     def depth(self) -> int:
         """Get the maximum depth of the tree.
@@ -922,13 +777,9 @@ class ResourceTree:
         Returns:
             Maximum depth (1 for root only, 2 for root with children, etc.)
         """
-        return self._resource_depth(self.root)
+        from hrcp.display import tree_depth
 
-    def _resource_depth(self, resource: Resource) -> int:
-        """Calculate depth of subtree rooted at resource."""
-        if not resource.children:
-            return 1
-        return 1 + max(self._resource_depth(c) for c in resource.children.values())
+        return tree_depth(self)
 
     def attribute_keys(self) -> set[str]:
         """Get all unique attribute keys used in the tree.
@@ -936,10 +787,9 @@ class ResourceTree:
         Returns:
             Set of all attribute key names.
         """
-        keys: set[str] = set()
-        for resource in self.walk():
-            keys.update(resource.attributes.keys())
-        return keys
+        from hrcp.display import attribute_keys
+
+        return attribute_keys(self)
 
     def pretty(self, path: str | None = None, *, compact: bool = False) -> str:
         """Get a pretty-printed string representation of the tree.
@@ -951,47 +801,9 @@ class ResourceTree:
         Returns:
             A formatted string representation of the tree.
         """
-        start = self.get(path) if path else self.root
-        if start is None:
-            return ""
+        from hrcp.display import pretty
 
-        lines: list[str] = []
-        self._pretty_resource(start, lines, "", compact)
-        return "\n".join(lines)
-
-    def _pretty_resource(
-        self,
-        resource: Resource,
-        lines: list[str],
-        prefix: str,
-        compact: bool,
-        is_root: bool = True,
-    ) -> None:
-        """Recursively build pretty print lines."""
-        # Build the line for this resource
-        if compact:
-            lines.append(f"{prefix}{resource.name}")
-        else:
-            attrs_str = ""
-            if resource.attributes:
-                attrs = ", ".join(
-                    f"{k}={v!r}" for k, v in sorted(resource.attributes.items())
-                )
-                attrs_str = f" [{attrs}]"
-            lines.append(f"{prefix}{resource.name}{attrs_str}")
-
-        # Process children
-        children = list(resource.children.values())
-        for i, child in enumerate(children):
-            is_last = i == len(children) - 1
-            if is_root:
-                child_prefix = "├── " if not is_last else "└── "
-            else:
-                child_prefix = prefix.replace("├── ", "│   ").replace("└── ", "    ")
-                child_prefix += "├── " if not is_last else "└── "
-                child_prefix.replace("├── ", "│   ").replace("└── ", "    ")
-
-            self._pretty_resource(child, lines, child_prefix, compact, is_root=False)
+        return pretty(self, path, compact=compact)
 
     def validate_all(self, path: str | None = None) -> dict[str, list[str]]:
         """Validate all resources against schema requirements.
@@ -1070,48 +882,9 @@ class ResourceTree:
         Raises:
             KeyError: If source path doesn't exist.
         """
-        source = self.get(source_path)
-        if source is None:
-            msg = f"Source path not found: {source_path}"
-            raise KeyError(msg)
+        from hrcp.operations import copy
 
-        # Serialize and recreate at new location
-        data = self._resource_to_dict(source)
-
-        # Extract destination parent and new name
-        from hrcp.path import basename
-        from hrcp.path import parent_path
-
-        dest_parent_path = parent_path(dest_path)
-        new_name = basename(dest_path)
-
-        # Update name in data
-        data["name"] = new_name
-
-        # Get or create parent
-        dest_parent = self.get(dest_parent_path)
-        if dest_parent is None:
-            dest_parent = self.create(dest_parent_path)
-
-        # Create the copy
-        return self._create_from_dict(data, dest_parent)
-
-    def _create_from_dict(self, data: dict[str, Any], parent: Resource) -> Resource:
-        """Create resource from dict and attach to parent."""
-        resource = Resource(
-            name=data["name"],
-            schema_registry=self._schema_registry,
-        )
-        for key, value in data.get("attributes", {}).items():
-            resource._attributes[key] = value
-
-        parent.add_child(resource)
-
-        # Recursively create children
-        for child_data in data.get("children", {}).values():
-            self._create_from_dict(child_data, resource)
-
-        return resource
+        return copy(self, source_path, dest_path)
 
     def move(self, source_path: str, dest_path: str) -> Resource:
         """Move a resource (and its subtree) to a new path.
@@ -1126,10 +899,9 @@ class ResourceTree:
         Raises:
             KeyError: If source path doesn't exist.
         """
-        # Copy then delete original
-        result = self.copy(source_path, dest_path)
-        self.delete(source_path)
-        return result
+        from hrcp.operations import move
+
+        return move(self, source_path, dest_path)
 
     def rename(self, path: str, new_name: str) -> Resource:
         """Rename a resource in place.
@@ -1144,25 +916,9 @@ class ResourceTree:
         Raises:
             KeyError: If path doesn't exist.
         """
-        resource = self.get(path)
-        if resource is None:
-            msg = f"Path not found: {path}"
-            raise KeyError(msg)
+        from hrcp.operations import rename
 
-        parent = resource.parent
-        if parent is None:
-            # Can't rename root
-            msg = "Cannot rename root resource"
-            raise ValueError(msg)
-
-        # Remove from parent with old name
-        del parent._children[resource.name]
-
-        # Update name and re-add
-        resource._name = new_name
-        parent._children[new_name] = resource
-
-        return resource
+        return rename(self, path, new_name)
 
     def __repr__(self) -> str:
         """Return a string representation of the ResourceTree."""
