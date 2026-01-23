@@ -1,0 +1,99 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+dynamic = ["version"]
+name = "hrcp"
+description = "Hierarchical Resource Configuration with Provenance"
+readme = "README.md"
+authors = [
+    { name = "Alvin Yip", email = "keongalvin@gmail.com" }
+]
+license = { text = "MIT" }
+keywords = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11"
+]
+requires-python = ">=3.11"
+dependencies = [
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+]
+
+[tool.ruff.lint]
+select = [
+    "A", # flake8-builtins
+    "B", # flake8-bugbear
+    "BLE", # flake8-blind-except
+    "C4", # flake8-comprehensions
+    "C90", # mccabe
+    "DJ", # flake8-django
+    "DTZ", # flake8-datetimez
+    "E", # pycodestyle errors
+    "ERA", # eradicate
+    "EXE", # flake8-executable
+    "F", # pyflakes
+    "G", # flake8-logging-format
+    "I", # isort
+    "ICN", # flake8-import-conventions
+    "ISC", # flake8-implicit-str-concat
+    "N", # pep8-naming
+    "PIE", # flake8-pie
+    "PLC", # pylint - convention
+    "PLE", # pylint - error
+    "PLW", # pylint - warning
+    "PTH", # flake8-use-pathlib
+    "Q", # flake8-quotes
+    "RET", # flake8-return
+    "RUF", # Ruff-specific rules
+    "S", # flake8-bandit
+    "SIM", # flake8-simplify
+    "T10", # flake8-debugger
+    "T20", # flake8-print
+    "TC", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP", # pyupgrade
+    "W", # pycodestyle - warning
+    "YTT", # flake8-2020
+]
+ignore = [
+    "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
+    "B010", # flake8-bugbear - do not call setattr with a constant attribute value
+    "BLE001", # flake8-blind-except - do not catch blind exception
+    "E501", # pycodestyle - line too long - handled by ruff format
+    "E402", # pycodestyle - module import not at top of file
+    "ERA001", # eradicate - found commented-out code
+    "PLW2901", # pylint - for loop variable overwritten by assignment target
+    "RUF012", # Ruff-specific rule - annotated with classvar
+    "ISC001", # Ruff formatter incompatible
+    "S311", #  # suspicious-non-cryptographic-random-usage
+]
+fixable = ["RUF022", "I", "F401", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["hrcp"]
+force-single-line = true
+
+[tool.ruff.lint.pep8-naming]
+extend-ignore-names = ["hrcp"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { local_scheme = "no-local-version" }
