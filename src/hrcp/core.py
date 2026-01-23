@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 
 from hrcp.schema import SchemaRegistry
 
@@ -696,114 +695,6 @@ class ResourceTree:
         from hrcp.serialization import tree_from_toml_file
 
         return tree_from_toml_file(path, root_name)
-
-    def find(self, path: str | None = None, **criteria: Any) -> list[Resource]:
-        """Find resources matching attribute criteria.
-
-        Args:
-            path: Optional path to restrict search to a subtree.
-            **criteria: Attribute key-value pairs to match.
-
-        Returns:
-            List of resources where all criteria match.
-        """
-        from hrcp.search import find
-
-        return find(self, path, **criteria)
-
-    def find_first(self, path: str | None = None, **criteria: Any) -> Resource | None:
-        """Find first resource matching attribute criteria.
-
-        Args:
-            path: Optional path to restrict search to a subtree.
-            **criteria: Attribute key-value pairs to match.
-
-        Returns:
-            First matching resource, or None if not found.
-        """
-        from hrcp.search import find_first
-
-        return find_first(self, path, **criteria)
-
-    def filter(
-        self,
-        predicate: Callable[[Resource], bool],
-        path: str | None = None,
-    ) -> list[Resource]:
-        """Filter resources using a predicate function.
-
-        Args:
-            predicate: Function that takes a Resource and returns True to include.
-            path: Optional path to restrict search to a subtree.
-
-        Returns:
-            List of resources where predicate returns True.
-        """
-        from hrcp.search import filter_resources
-
-        return filter_resources(self, predicate, path)
-
-    def exists(self, path: str | None = None, **criteria: Any) -> bool:
-        """Check if any resource matches the criteria.
-
-        Args:
-            path: Optional path to restrict search to a subtree.
-            **criteria: Attribute key-value pairs to match.
-
-        Returns:
-            True if at least one matching resource exists.
-        """
-        from hrcp.search import exists
-
-        return exists(self, path, **criteria)
-
-    def count(self, path: str | None = None, **criteria: Any) -> int:
-        """Count resources matching the criteria.
-
-        Args:
-            path: Optional path to restrict search to a subtree.
-            **criteria: Attribute key-value pairs to match.
-
-        Returns:
-            Number of matching resources.
-        """
-        from hrcp.search import count
-
-        return count(self, path, **criteria)
-
-    def depth(self) -> int:
-        """Get the maximum depth of the tree.
-
-        Returns:
-            Maximum depth (1 for root only, 2 for root with children, etc.)
-        """
-        from hrcp.display import tree_depth
-
-        return tree_depth(self)
-
-    def attribute_keys(self) -> set[str]:
-        """Get all unique attribute keys used in the tree.
-
-        Returns:
-            Set of all attribute key names.
-        """
-        from hrcp.display import attribute_keys
-
-        return attribute_keys(self)
-
-    def pretty(self, path: str | None = None, *, compact: bool = False) -> str:
-        """Get a pretty-printed string representation of the tree.
-
-        Args:
-            path: Optional path to restrict to a subtree.
-            compact: If True, use compact format without attributes.
-
-        Returns:
-            A formatted string representation of the tree.
-        """
-        from hrcp.display import pretty
-
-        return pretty(self, path, compact=compact)
 
     def validate_all(self, path: str | None = None) -> dict[str, list[str]]:
         """Validate all resources against schema requirements.

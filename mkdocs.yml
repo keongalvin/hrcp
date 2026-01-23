@@ -105,6 +105,7 @@ nav:
       - Installation: getting-started/installation.md
       - Quick Start: getting-started/quickstart.md
   - User Guide:
+      - Philosophy & Scope: guide/philosophy.md
       - Core Concepts: guide/concepts.md
       - Propagation Modes: guide/propagation.md
       - Provenance: guide/provenance.md

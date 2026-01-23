@@ -302,54 +302,6 @@ class TestResourceTreeSize:
         assert len(tree) == 1 + len(child_names)
 
 
-class TestResourceTreeDepth:
-    """Test tree depth operations."""
-
-    @given(root_name=valid_name)
-    def test_depth_of_empty_tree(self, root_name):
-        """An empty tree (root only) has depth 1."""
-        tree = ResourceTree(root_name=root_name)
-        assert tree.depth() == 1
-
-    @given(root_name=valid_name, child_name=valid_name)
-    def test_depth_with_one_level(self, root_name, child_name):
-        """Tree with one level of children has depth 2."""
-        tree = ResourceTree(root_name=root_name)
-        tree.create(f"/{root_name}/{child_name}")
-        assert tree.depth() == 2
-
-    @given(
-        root_name=valid_name,
-        names=st.lists(valid_name, min_size=2, max_size=4, unique=True),
-    )
-    def test_depth_with_nested_children(self, root_name, names):
-        """Tree depth reflects deepest nesting."""
-        tree = ResourceTree(root_name=root_name)
-        path = f"/{root_name}/" + "/".join(names)
-        tree.create(path)
-        assert tree.depth() == 1 + len(names)
-
-
-class TestResourceTreeAttributeKeys:
-    """Test attribute key introspection."""
-
-    @given(root_name=valid_name)
-    def test_attribute_keys_empty_tree(self, root_name):
-        """Empty tree has no attribute keys."""
-        tree = ResourceTree(root_name=root_name)
-        assert tree.attribute_keys() == set()
-
-    @given(root_name=valid_name, key1=valid_name, key2=valid_name, val=attr_value)
-    def test_attribute_keys_returns_all_keys(self, root_name, key1, key2, val):
-        """attribute_keys() returns all unique keys."""
-        if key1 == key2:
-            key2 = key2 + "2"
-        tree = ResourceTree(root_name=root_name)
-        tree.root.set_attribute(key1, val)
-        tree.create(f"/{root_name}/child", attributes={key2: val})
-        assert tree.attribute_keys() == {key1, key2}
-
-
 class TestResourceTreeRename:
     """Test renaming resources."""
 
