@@ -59,8 +59,8 @@ def pattern_to_regex(pattern: str) -> str:
                 # Match any path that eventually leads to the remaining pattern
                 remaining = "/" + "/".join(segments[i + 1 :])
                 remaining_regex = pattern_to_regex(remaining)
-                # Remove the start anchor from remaining_regex
-                remaining_regex = remaining_regex.lstrip("^")
+                # Remove anchors from remaining_regex (they'll be added by outer call)
+                remaining_regex = remaining_regex.lstrip("^").rstrip("$")
                 regex_parts.append(f"(?:/[^/]+)*{remaining_regex}")
                 break  # Rest is handled by remaining_regex
             # ** at the end - match anything remaining
