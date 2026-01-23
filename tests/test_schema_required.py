@@ -86,7 +86,12 @@ class TestRequiredValidation:
         with pytest.raises(ValidationError, match=key):
             tree.validate_required(f"/{root}")
 
-    @given(root=valid_name, key1=valid_name, key2=valid_name, value=st.text(min_size=1, max_size=20))
+    @given(
+        root=valid_name,
+        key1=valid_name,
+        key2=valid_name,
+        value=st.text(min_size=1, max_size=20),
+    )
     def test_validate_required_checks_all_fields(self, root, key1, key2, value):
         """Validation checks all required fields."""
         if key1 == key2:
@@ -100,8 +105,16 @@ class TestRequiredValidation:
         with pytest.raises(ValidationError, match=key2):
             tree.validate_required(f"/{root}")
 
-    @given(root=valid_name, key1=valid_name, key2=valid_name, key3=valid_name, value=st.text(min_size=1, max_size=20))
-    def test_validate_required_returns_missing_list(self, root, key1, key2, key3, value):
+    @given(
+        root=valid_name,
+        key1=valid_name,
+        key2=valid_name,
+        key3=valid_name,
+        value=st.text(min_size=1, max_size=20),
+    )
+    def test_validate_required_returns_missing_list(
+        self, root, key1, key2, key3, value
+    ):
         """get_missing_required() returns list of missing required fields."""
         keys = [key1]
         for k in [key2, key3]:
@@ -119,6 +132,17 @@ class TestRequiredValidation:
         missing = tree.get_missing_required(f"/{root}")
 
         assert set(missing) == {keys[1], keys[2]}
+
+    @given(root=valid_name, fake=valid_name, key=valid_name)
+    def test_get_missing_required_invalid_path_raises(self, root, fake, key):
+        """get_missing_required() raises KeyError for invalid path."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.define(key, required=True)
+
+        with pytest.raises(KeyError):
+            tree.get_missing_required(f"/{fake}")
 
 
 class TestJSONSchemaRequiredExport:

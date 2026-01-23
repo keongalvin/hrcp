@@ -109,6 +109,18 @@ class TestPrettyPrint:
         assert root in output
         assert key in output
 
+    @given(root=valid_name, fake=valid_name)
+    def test_pretty_with_invalid_path_returns_empty(self, root, fake):
+        """pretty() with invalid path returns empty string."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child")
+
+        output = tree.pretty(path=f"/{fake}")
+
+        assert output == ""
+
 
 class TestRepr:
     """Test __repr__ for debugging."""

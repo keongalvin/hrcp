@@ -135,3 +135,9 @@ class TestNormalizePath:
         """normalize_path handles already clean paths."""
         path = "/" + "/".join(segments)
         assert normalize_path(path) == path
+
+    def test_normalize_empty_path_returns_root(self):
+        """normalize_path returns '/' for empty segments."""
+        assert normalize_path("/") == "/"
+        assert normalize_path("") == "/"
+        assert normalize_path("//") == "/"

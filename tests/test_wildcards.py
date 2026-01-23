@@ -38,7 +38,13 @@ class TestSingleWildcard:
         assert f"/{root}/{regions[2]}/database" not in paths
         assert len(results) == 2
 
-    @given(root=valid_name, loc1=valid_name, loc2=valid_name, dc1=valid_name, dc2=valid_name)
+    @given(
+        root=valid_name,
+        loc1=valid_name,
+        loc2=valid_name,
+        dc1=valid_name,
+        dc2=valid_name,
+    )
     def test_wildcard_at_different_positions(self, root, loc1, loc2, dc1, dc2):
         """Wildcard can appear at different path positions."""
         if loc1 == loc2:
@@ -58,7 +64,11 @@ class TestSingleWildcard:
         results = tree.query(f"/{root}/*/{dc1}/host1")
         assert len(results) == 2
 
-    @given(root=valid_name, region=valid_name, hosts=st.lists(valid_name, min_size=2, max_size=4, unique=True))
+    @given(
+        root=valid_name,
+        region=valid_name,
+        hosts=st.lists(valid_name, min_size=2, max_size=4, unique=True),
+    )
     def test_wildcard_at_end(self, root, region, hosts):
         """Wildcard at end matches any children."""
         tree = ResourceTree(root_name=root)
@@ -69,7 +79,11 @@ class TestSingleWildcard:
 
         assert len(results) == len(hosts)
 
-    @given(root=valid_name, locs=st.lists(valid_name, min_size=2, max_size=3, unique=True), dcs=st.lists(valid_name, min_size=2, max_size=3, unique=True))
+    @given(
+        root=valid_name,
+        locs=st.lists(valid_name, min_size=2, max_size=3, unique=True),
+        dcs=st.lists(valid_name, min_size=2, max_size=3, unique=True),
+    )
     def test_multiple_single_wildcards(self, root, locs, dcs):
         """Multiple single wildcards in one pattern."""
         tree = ResourceTree(root_name=root)
@@ -91,6 +105,22 @@ class TestSingleWildcard:
 
         assert results == []
 
+    @given(root=valid_name, region=valid_name)
+    def test_wildcard_within_segment(self, root, region):
+        """Wildcard within segment matches partial names (e.g., server*)."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{region}/server1")
+        tree.create(f"/{root}/{region}/server2")
+        tree.create(f"/{root}/{region}/database")
+
+        results = tree.query(f"/{root}/{region}/server*")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/{region}/server1" in paths
+        assert f"/{root}/{region}/server2" in paths
+        assert f"/{root}/{region}/database" not in paths
+        assert len(results) == 2
+
 
 class TestDoubleWildcard:
     """Test double wildcard (**) for recursive matching."""
@@ -108,7 +138,9 @@ class TestDoubleWildcard:
 
         assert len(results) == 4
 
-    @given(root=valid_name, names=st.lists(valid_name, min_size=1, max_size=3, unique=True))
+    @given(
+        root=valid_name, names=st.lists(valid_name, min_size=1, max_size=3, unique=True)
+    )
     def test_double_wildcard_at_end(self, root, names):
         """Double ** at end matches all descendants."""
         tree = ResourceTree(root_name=root)
@@ -193,8 +225,16 @@ class TestQueryExactPath:
 class TestQueryValues:
     """Test querying attribute values across multiple resources."""
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, key=valid_name, parent_val=st.text(max_size=20))
-    def test_query_values_with_down_propagation(self, root, child1, child2, key, parent_val):
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        key=valid_name,
+        parent_val=st.text(max_size=20),
+    )
+    def test_query_values_with_down_propagation(
+        self, root, child1, child2, key, parent_val
+    ):
         """Get values from matching resources with DOWN propagation."""
         if child1 == child2:
             child2 = child2 + "2"
@@ -208,8 +248,17 @@ class TestQueryValues:
         # Both children inherit value from parent
         assert values == [parent_val, parent_val]
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, key=valid_name, val1=st.integers(), val2=st.integers())
-    def test_query_values_returns_local_values(self, root, child1, child2, key, val1, val2):
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        key=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+    )
+    def test_query_values_returns_local_values(
+        self, root, child1, child2, key, val1, val2
+    ):
         """Get local values from matching resources."""
         if child1 == child2:
             child2 = child2 + "2"
@@ -221,7 +270,13 @@ class TestQueryValues:
 
         assert sorted(values) == sorted([val1, val2])
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, key=valid_name, val=st.integers())
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        key=valid_name,
+        val=st.integers(),
+    )
     def test_query_values_skips_missing(self, root, child1, child2, key, val):
         """Missing values are not included in results."""
         if child1 == child2:
@@ -233,3 +288,27 @@ class TestQueryValues:
         values = tree.query_values(f"/{root}/*", key, PropagationMode.NONE)
 
         assert values == [val]
+
+    @given(
+        root=valid_name,
+        region1=valid_name,
+        region2=valid_name,
+        key=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+    )
+    def test_query_values_with_up_propagation(
+        self, root, region1, region2, key, val1, val2
+    ):
+        """query_values with UP mode aggregates and extends results."""
+        if region1 == region2:
+            region2 = region2 + "2"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{region1}/child1", attributes={key: val1})
+        tree.create(f"/{root}/{region2}/child2", attributes={key: val2})
+
+        # Query both regions with UP mode - each region collects from its descendants
+        values = tree.query_values(f"/{root}/*", key, PropagationMode.UP)
+
+        # UP returns lists, query_values extends them
+        assert sorted(values) == sorted([val1, val2])

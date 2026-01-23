@@ -49,7 +49,12 @@ class TestValidationReport:
         assert f"/{root}/{child}" in errors
         assert key in errors[f"/{root}/{child}"]
 
-    @given(root=valid_name, child=valid_name, grandchild=valid_name, name=st.text(min_size=1, max_size=20))
+    @given(
+        root=valid_name,
+        child=valid_name,
+        grandchild=valid_name,
+        name=st.text(min_size=1, max_size=20),
+    )
     def test_validate_all_checks_nested_resources(self, root, child, grandchild, name):
         """validate_all() checks all nested resources."""
         tree = ResourceTree(root_name=root)
@@ -64,7 +69,12 @@ class TestValidationReport:
         assert f"/{root}/{child}" not in errors
         assert f"/{root}/{child}/{grandchild}" in errors
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, id_val=st.text(min_size=1, max_size=10))
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        id_val=st.text(min_size=1, max_size=10),
+    )
     def test_validate_all_with_path(self, root, child1, child2, id_val):
         """validate_all(path=...) validates only subtree."""
         if child1 == child2:
@@ -130,3 +140,20 @@ class TestValidationSummary:
 
         # Either empty or indicates no errors
         assert key not in summary or "error" not in summary.lower()
+
+
+class TestValidateAllWithInvalidPath:
+    """Test validate_all with invalid paths."""
+
+    @given(root=valid_name, fake=valid_name, key=valid_name)
+    def test_validate_all_with_invalid_path_returns_empty(self, root, fake, key):
+        """validate_all() with invalid path returns empty dict."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.define(key, required=True)
+        tree.create(f"/{root}/child")  # Missing required
+
+        errors = tree.validate_all(path=f"/{fake}")
+
+        assert errors == {}

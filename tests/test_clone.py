@@ -28,7 +28,13 @@ attr_value = st.one_of(
 class TestTreeClone:
     """Test ResourceTree cloning."""
 
-    @given(root=valid_name, key=valid_name, val1=st.integers(), val2=st.integers(), child=valid_name)
+    @given(
+        root=valid_name,
+        key=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+        child=valid_name,
+    )
     def test_clone_creates_independent_copy(self, root, key, val1, val2, child):
         """clone() creates a deep copy independent of original."""
         tree = ResourceTree(root_name=root)
@@ -45,7 +51,13 @@ class TestTreeClone:
         assert cloned.root.attributes[key] == val1
         assert cloned.get(f"/{cloned.root.name}/another") is None
 
-    @given(root=valid_name, child1=valid_name, child2=valid_name, name1=st.text(max_size=20), name2=st.text(max_size=20))
+    @given(
+        root=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        name1=st.text(max_size=20),
+        name2=st.text(max_size=20),
+    )
     def test_clone_preserves_structure(self, root, child1, child2, name1, name2):
         """clone() preserves full tree structure."""
         if child1 == child2:
@@ -107,11 +119,28 @@ class TestSubtreeClone:
         with pytest.raises(KeyError):
             tree.clone_subtree(f"/{fake}")
 
+    @given(
+        root=valid_name, team=valid_name, port=st.integers(min_value=1, max_value=65535)
+    )
+    def test_clone_subtree_preserves_schema(self, root, team, port):
+        """clone_subtree() preserves schema definitions."""
+        tree = ResourceTree(root_name=root)
+        tree.define("port", type_=int, ge=1, le=65535)
+        tree.create(f"/{root}/{team}", attributes={"port": port})
+
+        subtree = tree.clone_subtree(f"/{root}/{team}")
+
+        # Schema should be copied and enforced
+        with pytest.raises(ValidationError):
+            subtree.root.set_attribute("port", -1)
+
 
 class TestMergeTrees:
     """Test merging trees together."""
 
-    @given(root=valid_name, base_key=valid_name, base_val=attr_value, new_child=valid_name)
+    @given(
+        root=valid_name, base_key=valid_name, base_val=attr_value, new_child=valid_name
+    )
     def test_merge_adds_missing_resources(self, root, base_key, base_val, new_child):
         """merge() adds resources from source not in target."""
         target = ResourceTree(root_name=root)
@@ -126,8 +155,17 @@ class TestMergeTrees:
         assert target.get(f"/{root}/{new_child}").attributes["added"] is True
         assert target.root.attributes[base_key] == base_val
 
-    @given(root=valid_name, key=valid_name, val1=st.integers(), val2=st.integers(), keep_key=valid_name, keep_val=attr_value)
-    def test_merge_updates_existing_attributes(self, root, key, val1, val2, keep_key, keep_val):
+    @given(
+        root=valid_name,
+        key=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+        keep_key=valid_name,
+        keep_val=attr_value,
+    )
+    def test_merge_updates_existing_attributes(
+        self, root, key, val1, val2, keep_key, keep_val
+    ):
         """merge() updates attributes from source."""
         if key == keep_key:
             keep_key = keep_key + "2"
@@ -143,7 +181,13 @@ class TestMergeTrees:
         assert target.root.attributes[key] == val2
         assert target.root.attributes[keep_key] == keep_val
 
-    @given(root=valid_name, child=valid_name, old_val=st.text(max_size=20), new_val=st.text(max_size=20), port=st.integers())
+    @given(
+        root=valid_name,
+        child=valid_name,
+        old_val=st.text(max_size=20),
+        new_val=st.text(max_size=20),
+        port=st.integers(),
+    )
     def test_merge_recursive(self, root, child, old_val, new_val, port):
         """merge() recursively merges children."""
         target = ResourceTree(root_name=root)

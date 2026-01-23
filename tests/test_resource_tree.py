@@ -106,7 +106,9 @@ class TestResourceTreePathAccess:
         assert result is None
 
     @given(root_name=valid_name, child_name=valid_name, missing=valid_name)
-    def test_get_partial_path_returns_none_if_incomplete(self, root_name, child_name, missing):
+    def test_get_partial_path_returns_none_if_incomplete(
+        self, root_name, child_name, missing
+    ):
         """If only part of the path exists, None is returned."""
         tree = ResourceTree(root_name=root_name)
         child = Resource(name=child_name)
@@ -131,7 +133,9 @@ class TestResourceTreeCreationAtPath:
         assert resource.parent is tree.root
         assert tree.root.get_child(child_name) is resource
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value)
+    @given(
+        root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value
+    )
     def test_create_resource_with_attributes(self, root_name, child_name, key, value):
         """A Resource can be created with initial attributes."""
         tree = ResourceTree(root_name=root_name)
@@ -140,7 +144,10 @@ class TestResourceTreeCreationAtPath:
 
         assert resource.attributes == {key: value}
 
-    @given(root_name=valid_name, names=st.lists(valid_name, min_size=2, max_size=4, unique=True))
+    @given(
+        root_name=valid_name,
+        names=st.lists(valid_name, min_size=2, max_size=4, unique=True),
+    )
     def test_create_nested_path_creates_intermediates(self, root_name, names):
         """Creating a deep path creates intermediate Resources."""
         tree = ResourceTree(root_name=root_name)
@@ -150,7 +157,7 @@ class TestResourceTreeCreationAtPath:
 
         # Verify the full chain was created
         for i in range(len(names)):
-            partial_path = f"/{root_name}/" + "/".join(names[:i+1])
+            partial_path = f"/{root_name}/" + "/".join(names[: i + 1])
             assert tree.get(partial_path) is not None
         assert tree.get(path) is leaf
 
@@ -188,7 +195,10 @@ class TestResourceTreeDeletion:
         assert deleted.name == child_name
         assert tree.get(f"/{root_name}/{child_name}") is None
 
-    @given(root_name=valid_name, names=st.lists(valid_name, min_size=2, max_size=4, unique=True))
+    @given(
+        root_name=valid_name,
+        names=st.lists(valid_name, min_size=2, max_size=4, unique=True),
+    )
     def test_delete_subtree(self, root_name, names):
         """Deleting a Resource deletes its entire subtree."""
         tree = ResourceTree(root_name=root_name)
@@ -199,7 +209,7 @@ class TestResourceTreeDeletion:
         tree.delete(f"/{root_name}/{names[0]}")
 
         for i in range(len(names)):
-            partial_path = f"/{root_name}/" + "/".join(names[:i+1])
+            partial_path = f"/{root_name}/" + "/".join(names[: i + 1])
             assert tree.get(partial_path) is None
 
     @given(root_name=valid_name, fake_name=valid_name)
@@ -222,7 +232,10 @@ class TestResourceTreeDeletion:
 class TestResourceTreeTraversal:
     """Test tree traversal operations."""
 
-    @given(root_name=valid_name, child_names=st.lists(valid_name, min_size=1, max_size=4, unique=True))
+    @given(
+        root_name=valid_name,
+        child_names=st.lists(valid_name, min_size=1, max_size=4, unique=True),
+    )
     def test_walk_visits_all_resources(self, root_name, child_names):
         """walk() yields all Resources in the tree."""
         tree = ResourceTree(root_name=root_name)
@@ -236,7 +249,11 @@ class TestResourceTreeTraversal:
             assert f"/{root_name}/{name}" in paths
         assert len(paths) == 1 + len(child_names)
 
-    @given(root_name=valid_name, region=valid_name, children=st.lists(valid_name, min_size=1, max_size=3, unique=True))
+    @given(
+        root_name=valid_name,
+        region=valid_name,
+        children=st.lists(valid_name, min_size=1, max_size=3, unique=True),
+    )
     def test_walk_from_specific_path(self, root_name, region, children):
         """walk() can start from a specific path."""
         tree = ResourceTree(root_name=root_name)
@@ -272,7 +289,10 @@ class TestResourceTreeSize:
         tree = ResourceTree(root_name=root_name)
         assert len(tree) == 1
 
-    @given(root_name=valid_name, child_names=st.lists(valid_name, min_size=1, max_size=5, unique=True))
+    @given(
+        root_name=valid_name,
+        child_names=st.lists(valid_name, min_size=1, max_size=5, unique=True),
+    )
     def test_tree_size_counts_all_resources(self, root_name, child_names):
         """len(tree) returns total Resource count."""
         tree = ResourceTree(root_name=root_name)
@@ -280,3 +300,71 @@ class TestResourceTreeSize:
             tree.create(f"/{root_name}/{name}")
 
         assert len(tree) == 1 + len(child_names)
+
+
+class TestResourceTreeDepth:
+    """Test tree depth operations."""
+
+    @given(root_name=valid_name)
+    def test_depth_of_empty_tree(self, root_name):
+        """An empty tree (root only) has depth 1."""
+        tree = ResourceTree(root_name=root_name)
+        assert tree.depth() == 1
+
+    @given(root_name=valid_name, child_name=valid_name)
+    def test_depth_with_one_level(self, root_name, child_name):
+        """Tree with one level of children has depth 2."""
+        tree = ResourceTree(root_name=root_name)
+        tree.create(f"/{root_name}/{child_name}")
+        assert tree.depth() == 2
+
+    @given(
+        root_name=valid_name,
+        names=st.lists(valid_name, min_size=2, max_size=4, unique=True),
+    )
+    def test_depth_with_nested_children(self, root_name, names):
+        """Tree depth reflects deepest nesting."""
+        tree = ResourceTree(root_name=root_name)
+        path = f"/{root_name}/" + "/".join(names)
+        tree.create(path)
+        assert tree.depth() == 1 + len(names)
+
+
+class TestResourceTreeAttributeKeys:
+    """Test attribute key introspection."""
+
+    @given(root_name=valid_name)
+    def test_attribute_keys_empty_tree(self, root_name):
+        """Empty tree has no attribute keys."""
+        tree = ResourceTree(root_name=root_name)
+        assert tree.attribute_keys() == set()
+
+    @given(root_name=valid_name, key1=valid_name, key2=valid_name, val=attr_value)
+    def test_attribute_keys_returns_all_keys(self, root_name, key1, key2, val):
+        """attribute_keys() returns all unique keys."""
+        if key1 == key2:
+            key2 = key2 + "2"
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key1, val)
+        tree.create(f"/{root_name}/child", attributes={key2: val})
+        assert tree.attribute_keys() == {key1, key2}
+
+
+class TestResourceTreeRename:
+    """Test renaming resources."""
+
+    @given(root_name=valid_name, fake=valid_name)
+    def test_rename_invalid_path_raises(self, root_name, fake):
+        """rename() raises KeyError for invalid path."""
+        if root_name == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root_name)
+        with pytest.raises(KeyError):
+            tree.rename(f"/{fake}", "newname")
+
+    @given(root_name=valid_name, new_name=valid_name)
+    def test_rename_root_raises(self, root_name, new_name):
+        """rename() raises ValueError when renaming root."""
+        tree = ResourceTree(root_name=root_name)
+        with pytest.raises(ValueError, match="Cannot rename root"):
+            tree.rename(f"/{root_name}", new_name)

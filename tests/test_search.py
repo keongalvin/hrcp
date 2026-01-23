@@ -19,7 +19,14 @@ valid_name = st.text(
 class TestFindByAttribute:
     """Test finding resources by attribute values."""
 
-    @given(root=valid_name, name1=valid_name, name2=valid_name, name3=valid_name, role1=st.text(min_size=1, max_size=10), role2=st.text(min_size=1, max_size=10))
+    @given(
+        root=valid_name,
+        name1=valid_name,
+        name2=valid_name,
+        name3=valid_name,
+        role1=st.text(min_size=1, max_size=10),
+        role2=st.text(min_size=1, max_size=10),
+    )
     def test_find_by_exact_value(self, root, name1, name2, name3, role1, role2):
         """find() returns resources with matching attribute value."""
         # Ensure unique names and different roles
@@ -57,8 +64,12 @@ class TestFindByAttribute:
                 names.append(n)
 
         tree = ResourceTree(root_name=root)
-        tree.create(f"/{root}/{names[0]}", attributes={"role": "dev", "team": "backend"})
-        tree.create(f"/{root}/{names[1]}", attributes={"role": "dev", "team": "frontend"})
+        tree.create(
+            f"/{root}/{names[0]}", attributes={"role": "dev", "team": "backend"}
+        )
+        tree.create(
+            f"/{root}/{names[1]}", attributes={"role": "dev", "team": "frontend"}
+        )
         tree.create(f"/{root}/{names[2]}", attributes={"role": "qa", "team": "backend"})
 
         results = tree.find(role="dev", team="backend")
@@ -66,7 +77,12 @@ class TestFindByAttribute:
         assert len(results) == 1
         assert results[0].name == names[0]
 
-    @given(root=valid_name, name=valid_name, role=st.text(min_size=1, max_size=10), search_role=st.text(min_size=1, max_size=10))
+    @given(
+        root=valid_name,
+        name=valid_name,
+        role=st.text(min_size=1, max_size=10),
+        search_role=st.text(min_size=1, max_size=10),
+    )
     def test_find_returns_empty_when_no_match(self, root, name, role, search_role):
         """find() returns empty list when no resources match."""
         if role == search_role:
@@ -78,7 +94,13 @@ class TestFindByAttribute:
 
         assert results == []
 
-    @given(root=valid_name, team1=valid_name, team2=valid_name, member1=valid_name, member2=valid_name)
+    @given(
+        root=valid_name,
+        team1=valid_name,
+        team2=valid_name,
+        member1=valid_name,
+        member2=valid_name,
+    )
     def test_find_in_subtree(self, root, team1, team2, member1, member2):
         """find() with path restricts search to subtree."""
         if team1 == team2:
@@ -124,7 +146,15 @@ class TestFindFirst:
 class TestFilter:
     """Test filtering resources with predicates."""
 
-    @given(root=valid_name, name1=valid_name, name2=valid_name, name3=valid_name, age1=st.integers(min_value=30, max_value=50), age2=st.integers(min_value=20, max_value=29), age3=st.integers(min_value=30, max_value=50))
+    @given(
+        root=valid_name,
+        name1=valid_name,
+        name2=valid_name,
+        name3=valid_name,
+        age1=st.integers(min_value=30, max_value=50),
+        age2=st.integers(min_value=20, max_value=29),
+        age3=st.integers(min_value=30, max_value=50),
+    )
     def test_filter_with_predicate(self, root, name1, name2, name3, age1, age2, age3):
         """filter() returns resources where predicate returns True."""
         names = [name1]
@@ -145,7 +175,13 @@ class TestFilter:
         result_names = {r.name for r in results}
         assert result_names == {names[0], names[2]}
 
-    @given(root=valid_name, team1=valid_name, team2=valid_name, member1=valid_name, member2=valid_name)
+    @given(
+        root=valid_name,
+        team1=valid_name,
+        team2=valid_name,
+        member1=valid_name,
+        member2=valid_name,
+    )
     def test_filter_with_path(self, root, team1, team2, member1, member2):
         """filter() with path restricts to subtree."""
         if team1 == team2:
@@ -154,7 +190,9 @@ class TestFilter:
         tree.create(f"/{root}/{team1}/{member1}", attributes={"active": True})
         tree.create(f"/{root}/{team2}/{member2}", attributes={"active": True})
 
-        results = tree.filter(lambda r: r.attributes.get("active"), path=f"/{root}/{team1}")
+        results = tree.filter(
+            lambda r: r.attributes.get("active"), path=f"/{root}/{team1}"
+        )
 
         assert len(results) == 1
 
@@ -170,7 +208,12 @@ class TestExists:
 
         assert tree.exists(role=role) is True
 
-    @given(root=valid_name, name=valid_name, role=st.text(min_size=1, max_size=10), search_role=st.text(min_size=1, max_size=10))
+    @given(
+        root=valid_name,
+        name=valid_name,
+        role=st.text(min_size=1, max_size=10),
+        search_role=st.text(min_size=1, max_size=10),
+    )
     def test_exists_returns_false_when_not_found(self, root, name, role, search_role):
         """exists() returns False when no matching resource."""
         if role == search_role:
@@ -184,7 +227,14 @@ class TestExists:
 class TestCount:
     """Test counting resources with criteria."""
 
-    @given(root=valid_name, name1=valid_name, name2=valid_name, name3=valid_name, type1=st.text(min_size=1, max_size=10), type2=st.text(min_size=1, max_size=10))
+    @given(
+        root=valid_name,
+        name1=valid_name,
+        name2=valid_name,
+        name3=valid_name,
+        type1=st.text(min_size=1, max_size=10),
+        type2=st.text(min_size=1, max_size=10),
+    )
     def test_count_matching(self, root, name1, name2, name3, type1, type2):
         """count() returns number of matching resources."""
         names = [name1]
@@ -204,3 +254,43 @@ class TestCount:
         assert tree.count(type=type1) == 2
         assert tree.count(type=type2) == 1
         assert tree.count(type="nonexistent") == 0
+
+
+class TestSearchWithInvalidPath:
+    """Test search functions with invalid paths."""
+
+    @given(root=valid_name, fake=valid_name)
+    def test_find_with_invalid_path_returns_empty(self, root, fake):
+        """find() with invalid path returns empty list."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child", attributes={"x": 1})
+
+        results = tree.find(path=f"/{fake}", x=1)
+
+        assert results == []
+
+    @given(root=valid_name, fake=valid_name)
+    def test_find_first_with_invalid_path_returns_none(self, root, fake):
+        """find_first() with invalid path returns None."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child", attributes={"x": 1})
+
+        result = tree.find_first(path=f"/{fake}", x=1)
+
+        assert result is None
+
+    @given(root=valid_name, fake=valid_name)
+    def test_filter_with_invalid_path_returns_empty(self, root, fake):
+        """filter() with invalid path returns empty list."""
+        if root == fake:
+            fake = fake + "x"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/child", attributes={"x": 1})
+
+        results = tree.filter(lambda r: True, path=f"/{fake}")
+
+        assert results == []

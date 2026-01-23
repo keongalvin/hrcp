@@ -34,7 +34,11 @@ attr_value = st.one_of(
 class TestTOMLExport:
     """Test TOML export functionality."""
 
-    @given(root=valid_name, name=safe_string, port=st.integers(min_value=1, max_value=65535))
+    @given(
+        root=valid_name,
+        name=safe_string,
+        port=st.integers(min_value=1, max_value=65535),
+    )
     def test_to_toml_returns_string(self, root, name, port):
         """to_toml() returns a TOML string."""
         tree = ResourceTree(root_name=root)
@@ -98,10 +102,10 @@ class TestTOMLImport:
     @given(root=valid_name, name=safe_string, port=st.integers())
     def test_from_toml_simple(self, root, name, port):
         """from_toml() creates tree from TOML string."""
-        toml_str = f'''
+        toml_str = f"""
 name = "{name}"
 port = {port}
-'''
+"""
         tree = ResourceTree.from_toml(toml_str, root_name=root)
 
         assert tree.root.attributes["name"] == name
@@ -110,17 +114,39 @@ port = {port}
     @given(root=valid_name, child=valid_name, host=safe_string, port=st.integers())
     def test_from_toml_nested(self, root, child, host, port):
         """from_toml() handles nested tables."""
-        toml_str = f'''
+        toml_str = f"""
 [{child}]
 host = "{host}"
 port = {port}
-'''
+"""
         tree = ResourceTree.from_toml(toml_str, root_name=root)
 
         resource = tree.get(f"/{root}/{child}")
         assert resource is not None
         assert resource.attributes["host"] == host
         assert resource.attributes["port"] == port
+
+    @given(root=valid_name, level1=valid_name, level2=valid_name, value=st.integers())
+    def test_from_toml_deeply_nested(self, root, level1, level2, value):
+        """from_toml() handles deeply nested tables (2+ levels)."""
+        toml_str = f"""
+[{level1}]
+name = "level1"
+
+[{level1}.{level2}]
+value = {value}
+"""
+        tree = ResourceTree.from_toml(toml_str, root_name=root)
+
+        # level1 should exist as child of root
+        l1_resource = tree.get(f"/{root}/{level1}")
+        assert l1_resource is not None
+        assert l1_resource.attributes.get("name") == "level1"
+
+        # level2 should exist as child of level1
+        l2_resource = tree.get(f"/{root}/{level1}/{level2}")
+        assert l2_resource is not None
+        assert l2_resource.attributes["value"] == value
 
 
 class TestTOMLRoundTrip:

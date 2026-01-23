@@ -73,7 +73,9 @@ class TestProvenanceDataClass:
 class TestProvenanceWithDown:
     """Test provenance tracking for DOWN propagation."""
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, value=st.integers())
+    @given(
+        root_name=valid_name, child_name=valid_name, key=valid_name, value=st.integers()
+    )
     def test_provenance_from_self(self, root_name, child_name, key, value):
         """Provenance shows value came from the resource itself."""
         tree = ResourceTree(root_name=root_name)
@@ -85,7 +87,9 @@ class TestProvenanceWithDown:
         assert prov.source_path == f"/{root_name}/{child_name}"
         assert prov.mode == PropagationMode.DOWN
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value)
+    @given(
+        root_name=valid_name, child_name=valid_name, key=valid_name, value=attr_value
+    )
     def test_provenance_from_parent(self, root_name, child_name, key, value):
         """Provenance shows value inherited from parent."""
         tree = ResourceTree(root_name=root_name)
@@ -97,7 +101,13 @@ class TestProvenanceWithDown:
         assert prov.value == value
         assert prov.source_path == f"/{root_name}"
 
-    @given(root_name=valid_name, mid=valid_name, leaf=valid_name, key=valid_name, value=attr_value)
+    @given(
+        root_name=valid_name,
+        mid=valid_name,
+        leaf=valid_name,
+        key=valid_name,
+        value=attr_value,
+    )
     def test_provenance_from_grandparent(self, root_name, mid, leaf, key, value):
         """Provenance tracks value through multiple levels."""
         tree = ResourceTree(root_name=root_name)
@@ -124,8 +134,17 @@ class TestProvenanceWithDown:
 class TestProvenanceWithUp:
     """Test provenance tracking for UP aggregation."""
 
-    @given(root_name=valid_name, child1=valid_name, child2=valid_name, key=valid_name, val1=st.integers(), val2=st.integers())
-    def test_provenance_tracks_all_contributing_resources(self, root_name, child1, child2, key, val1, val2):
+    @given(
+        root_name=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+        key=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+    )
+    def test_provenance_tracks_all_contributing_resources(
+        self, root_name, child1, child2, key, val1, val2
+    ):
         """UP provenance lists all resources that contributed values."""
         if child1 == child2:
             child2 = child2 + "2"
@@ -139,8 +158,16 @@ class TestProvenanceWithUp:
         assert f"/{root_name}/{child1}" in prov.contributing_paths
         assert f"/{root_name}/{child2}" in prov.contributing_paths
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, root_val=attr_value, child_val=attr_value)
-    def test_provenance_up_includes_self(self, root_name, child_name, key, root_val, child_val):
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        root_val=attr_value,
+        child_val=attr_value,
+    )
+    def test_provenance_up_includes_self(
+        self, root_name, child_name, key, root_val, child_val
+    ):
         """UP provenance includes the resource's own value if present."""
         tree = ResourceTree(root_name=root_name)
         tree.root.set_attribute(key, root_val)
@@ -171,9 +198,13 @@ class TestProvenanceWithMergeDown:
         """MERGE_DOWN provenance shows where each merged key came from."""
         tree = ResourceTree(root_name=root_name)
         tree.root.set_attribute("config", {"a": 1, "b": 2})
-        child = tree.create(f"/{root_name}/{child_name}", attributes={"config": {"b": 3, "c": 4}})
+        child = tree.create(
+            f"/{root_name}/{child_name}", attributes={"config": {"b": 3, "c": 4}}
+        )
 
-        prov = get_value(child, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
+        prov = get_value(
+            child, "config", PropagationMode.MERGE_DOWN, with_provenance=True
+        )
 
         assert prov.value == {"a": 1, "b": 3, "c": 4}
         assert prov.key_sources["a"] == f"/{root_name}"
@@ -192,7 +223,9 @@ class TestProvenanceWithMergeDown:
             attributes={"config": {"logging": {"level": "DEBUG"}}},
         )
 
-        prov = get_value(child, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
+        prov = get_value(
+            child, "config", PropagationMode.MERGE_DOWN, with_provenance=True
+        )
 
         # For nested keys, use dot notation in key_sources
         assert prov.key_sources["logging.level"] == f"/{root_name}/{child_name}"
@@ -202,8 +235,16 @@ class TestProvenanceWithMergeDown:
 class TestProvenanceWithNone:
     """Test provenance tracking for NONE mode."""
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, parent_val=attr_value, child_val=attr_value)
-    def test_provenance_none_mode_local_only(self, root_name, child_name, key, parent_val, child_val):
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        parent_val=attr_value,
+        child_val=attr_value,
+    )
+    def test_provenance_none_mode_local_only(
+        self, root_name, child_name, key, parent_val, child_val
+    ):
         """NONE mode provenance only considers local value."""
         tree = ResourceTree(root_name=root_name)
         tree.root.set_attribute(key, parent_val)
@@ -214,8 +255,15 @@ class TestProvenanceWithNone:
         assert prov.value == child_val
         assert prov.source_path == f"/{root_name}/{child_name}"
 
-    @given(root_name=valid_name, child_name=valid_name, key=valid_name, parent_val=attr_value)
-    def test_provenance_none_mode_returns_none_if_no_local(self, root_name, child_name, key, parent_val):
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        parent_val=attr_value,
+    )
+    def test_provenance_none_mode_returns_none_if_no_local(
+        self, root_name, child_name, key, parent_val
+    ):
         """NONE mode returns None if no local value exists."""
         tree = ResourceTree(root_name=root_name)
         tree.root.set_attribute(key, parent_val)
@@ -224,3 +272,40 @@ class TestProvenanceWithNone:
         prov = get_value(child, key, PropagationMode.NONE, with_provenance=True)
 
         assert prov is None
+
+
+class TestProvenanceMergeDownEdgeCases:
+    """Test edge cases for MERGE_DOWN provenance."""
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name)
+    def test_merge_down_returns_none_when_no_values(self, root_name, child_name, key):
+        """MERGE_DOWN returns None when attribute doesn't exist anywhere."""
+        tree = ResourceTree(root_name=root_name)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        prov = get_value(child, key, PropagationMode.MERGE_DOWN, with_provenance=True)
+
+        assert prov is None
+
+    @given(root_name=valid_name, child_name=valid_name)
+    def test_merge_down_deeply_nested_dict_key_tracking(self, root_name, child_name):
+        """MERGE_DOWN tracks sources for deeply nested keys (3+ levels)."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(
+            "config",
+            {"level1": {"level2": {"level3": "root_value", "other": "root_other"}}},
+        )
+        child = tree.create(
+            f"/{root_name}/{child_name}",
+            attributes={"config": {"level1": {"level2": {"level3": "child_value"}}}},
+        )
+
+        prov = get_value(
+            child, "config", PropagationMode.MERGE_DOWN, with_provenance=True
+        )
+
+        # Verify deep nesting is tracked correctly
+        assert prov.value["level1"]["level2"]["level3"] == "child_value"
+        assert prov.value["level1"]["level2"]["other"] == "root_other"
+        assert prov.key_sources["level1.level2.level3"] == f"/{root_name}/{child_name}"
+        assert prov.key_sources["level1.level2.other"] == f"/{root_name}"

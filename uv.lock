@@ -235,9 +235,17 @@ wheels = [
 [[package]]
 name = "hrcp"
 source = { editable = "." }
-dependencies = [
+
+[package.optional-dependencies]
+all = [
     { name = "pyyaml" },
     { name = "tomli-w" },
+]
+toml = [
+    { name = "tomli-w" },
+]
+yaml = [
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -247,7 +255,9 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pyyaml" },
     { name = "ruff" },
+    { name = "tomli-w" },
 ]
 docs = [
     { name = "mkdocs" },
@@ -257,9 +267,12 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "tomli-w", specifier = ">=1.0.0" },
+    { name = "pyyaml", marker = "extra == 'all'", specifier = ">=6.0" },
+    { name = "pyyaml", marker = "extra == 'yaml'", specifier = ">=6.0" },
+    { name = "tomli-w", marker = "extra == 'all'", specifier = ">=1.0.0" },
+    { name = "tomli-w", marker = "extra == 'toml'", specifier = ">=1.0.0" },
 ]
+provides-extras = ["all", "toml", "yaml"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -268,7 +281,9 @@ dev = [
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", specifier = ">=0.1.0" },
+    { name = "tomli-w", specifier = ">=1.0.0" },
 ]
 docs = [
     { name = "mkdocs", specifier = ">=1.6.0" },

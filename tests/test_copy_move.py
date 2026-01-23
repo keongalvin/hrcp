@@ -27,7 +27,9 @@ attr_value = st.one_of(
 class TestCopyResource:
     """Test copying resources within tree."""
 
-    @given(root=valid_name, src=valid_name, dest=valid_name, key=valid_name, val=attr_value)
+    @given(
+        root=valid_name, src=valid_name, dest=valid_name, key=valid_name, val=attr_value
+    )
     def test_copy_resource_to_new_path(self, root, src, dest, key, val):
         """copy() copies resource to new location."""
         if src == dest:
@@ -45,7 +47,13 @@ class TestCopyResource:
         assert instance.attributes[key] == val
         assert instance.attributes["active"] is True
 
-    @given(root=valid_name, src=valid_name, dest=valid_name, child1=valid_name, child2=valid_name)
+    @given(
+        root=valid_name,
+        src=valid_name,
+        dest=valid_name,
+        child1=valid_name,
+        child2=valid_name,
+    )
     def test_copy_with_children(self, root, src, dest, child1, child2):
         """copy() copies entire subtree."""
         if src == dest:
@@ -62,7 +70,13 @@ class TestCopyResource:
         assert tree.get(f"/{root}/{dest}/{child2}") is not None
         assert tree.get(f"/{root}/{dest}/{child1}").attributes["x"] == 1
 
-    @given(root=valid_name, src=valid_name, dest=valid_name, val1=st.integers(), val2=st.integers())
+    @given(
+        root=valid_name,
+        src=valid_name,
+        dest=valid_name,
+        val1=st.integers(),
+        val2=st.integers(),
+    )
     def test_copy_is_independent(self, root, src, dest, val1, val2):
         """Copied resource is independent of original."""
         if src == dest:
@@ -86,6 +100,30 @@ class TestCopyResource:
         with pytest.raises(KeyError):
             tree.copy(f"/{root}/{fake}", f"/{root}/{dest}")
 
+    @given(
+        root=valid_name,
+        src=valid_name,
+        parent=valid_name,
+        dest=valid_name,
+        val=attr_value,
+    )
+    def test_copy_creates_parent_if_not_exists(self, root, src, parent, dest, val):
+        """copy() creates parent directories if they don't exist."""
+        if src == parent:
+            parent = parent + "2"
+        if src == dest:
+            dest = dest + "3"
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/{src}", attributes={"data": val})
+
+        # Copy to a path where parent doesn't exist
+        tree.copy(f"/{root}/{src}", f"/{root}/{parent}/{dest}")
+
+        # Parent should have been created
+        assert tree.get(f"/{root}/{parent}") is not None
+        assert tree.get(f"/{root}/{parent}/{dest}") is not None
+        assert tree.get(f"/{root}/{parent}/{dest}").attributes["data"] == val
+
 
 class TestMoveResource:
     """Test moving resources within tree."""
@@ -106,7 +144,13 @@ class TestMoveResource:
         assert tree.get(f"/{root}/{dest}") is not None
         assert tree.get(f"/{root}/{dest}").attributes["data"] == val
 
-    @given(root=valid_name, src=valid_name, dest=valid_name, child=valid_name, val=st.integers())
+    @given(
+        root=valid_name,
+        src=valid_name,
+        dest=valid_name,
+        child=valid_name,
+        val=st.integers(),
+    )
     def test_move_with_children(self, root, src, dest, child, val):
         """move() moves entire subtree."""
         if src == dest:
