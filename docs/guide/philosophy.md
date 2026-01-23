@@ -9,6 +9,35 @@ HRCP is intentionally minimal: **~2000 lines of dependency-free Python** solving
 - **Merge (MERGE_DOWN)**: Combine dictionaries/lists hierarchically
 - **Traceability**: Always know where a value came from
 
+## DIY Patterns
+
+These are trivial to implement yourself using `tree.walk()`:
+
+```python
+# find by attribute
+[r for r in tree.walk() if r.attributes.get("env") == "prod"]
+
+# find first match
+next((r for r in tree.walk() if r.attributes.get("env") == "prod"), None)
+
+# filter by predicate
+[r for r in tree.walk() if len(r.children) > 0]
+
+# exists check
+any(r.attributes.get("critical") for r in tree.walk())
+
+# count
+sum(1 for r in tree.walk() if r.attributes.get("enabled"))
+
+# all attribute keys
+{k for r in tree.walk() for k in r.attributes}
+
+# tree depth
+def depth(r): return 1 if not r.children else 1 + max(depth(c) for c in r.children.values())
+```
+
+We don't include these as methods because they're one-liners that don't need library support.
+
 ## Out of Scope
 
 These features were considered but rejected as beyond the library's scope:

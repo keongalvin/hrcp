@@ -96,7 +96,7 @@ def load_config(environment: str) -> ResourceTree:
     """Load base config and merge environment-specific overrides."""
     # Load base configuration
     base = ResourceTree.from_yaml_file("config/base.yaml")
-    
+
     # Merge environment-specific overrides
     env_file = f"config/{environment}.yaml"
     try:
@@ -104,7 +104,7 @@ def load_config(environment: str) -> ResourceTree:
         base.merge(env_config)
     except FileNotFoundError:
         pass  # No environment-specific config
-    
+
     return base
 
 # Usage
@@ -123,12 +123,12 @@ def load_multi_source_config() -> ResourceTree:
     config = ResourceTree(root_name="app")
     config.root.set_attribute("log_level", "INFO")
     config.root.set_attribute("timeout", 30)
-    
+
     # Merge file config
     if os.path.exists("config.yaml"):
         file_config = ResourceTree.from_yaml_file("config.yaml")
         config.merge(file_config)
-    
+
     # Merge environment overrides (highest priority)
     env_config = ResourceTree(root_name="app")
     if os.environ.get("LOG_LEVEL"):
@@ -136,7 +136,7 @@ def load_multi_source_config() -> ResourceTree:
     if os.environ.get("TIMEOUT"):
         env_config.root.set_attribute("timeout", int(os.environ["TIMEOUT"]))
     config.merge(env_config)
-    
+
     return config
 ```
 
@@ -183,14 +183,14 @@ def create_service_from_template(tree, template_path, new_name, overrides=None):
     """Create a new service by copying a template."""
     parent = "/".join(template_path.rsplit("/", 1)[:-1]) or tree.root.path
     new_path = f"{parent}/{new_name}"
-    
+
     tree.copy(template_path, new_path)
-    
+
     if overrides:
         resource = tree.get(new_path)
         for key, value in overrides.items():
             resource.set_attribute(key, value)
-    
+
     return new_path
 
 # Setup template
@@ -273,16 +273,16 @@ def version_bump(tree, service_path):
     resource = tree.get(service_path)
     if not resource:
         raise KeyError(f"Service not found: {service_path}")
-    
+
     old_path = f"{service_path}-old"
-    
+
     # Move current to -old (backup)
     tree.copy(service_path, old_path)
-    
+
     # Clear attributes on original for fresh start
     for key in list(resource.attributes.keys()):
         resource.delete_attribute(key)
-    
+
     return old_path
 
 # Usage
@@ -322,10 +322,10 @@ def safe_delete(tree, path, require_empty=False):
     resource = tree.get(path)
     if not resource:
         return False
-    
+
     if require_empty and resource.children:
         raise ValueError(f"Cannot delete {path}: has {len(resource.children)} children")
-    
+
     tree.delete(path)
     return True
 
@@ -383,44 +383,4 @@ tree.create("/platform/db")
 tree.create("/platform/cache")
 
 print(len(tree))  # 4 (root + 3 children)
-```
-
-### Get Tree Depth
-
-```python
-tree = ResourceTree(root_name="org")
-tree.create("/org/team/project/task")
-
-print(tree.depth())  # 4 (/org/team/project/task is 4 levels deep)
-```
-
-### Get All Attribute Keys
-
-```python
-tree = ResourceTree(root_name="config")
-tree.root.set_attribute("env", "prod")
-tree.create("/config/api", attributes={"port": 8080, "host": "localhost"})
-tree.create("/config/db", attributes={"port": 5432, "host": "db.local"})
-
-keys = tree.attribute_keys()
-print(keys)  # {'env', 'port', 'host'}
-```
-
-### Pretty Print
-
-```python
-tree = ResourceTree(root_name="platform")
-tree.root.set_attribute("env", "prod")
-tree.create("/platform/api", attributes={"port": 8080})
-tree.create("/platform/api/v1")
-tree.create("/platform/db", attributes={"host": "localhost"})
-
-print(tree.pretty())
-# platform
-#   env: prod
-#   api
-#     port: 8080
-#     v1
-#   db
-#     host: localhost
 ```

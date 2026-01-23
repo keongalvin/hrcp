@@ -110,7 +110,6 @@ nav:
       - Propagation Modes: guide/propagation.md
       - Provenance: guide/provenance.md
       - Wildcards: guide/wildcards.md
-      - Search & Filter: guide/search-filter.md
       - Tree Operations: guide/operations.md
       - Schema Validation: guide/schema.md
       - Serialization: guide/serialization.md
