@@ -346,30 +346,98 @@ safe_delete(tree, "/org/team", require_empty=True)
 
 ## Walking the Tree
 
-Iterate over all resources:
+`tree.walk()` is your primary tool for traversing and querying the tree. It yields resources depth-first.
 
 ```python
 tree = ResourceTree(root_name="org")
-tree.create("/org/eng/alice", attributes={"role": "dev"})
-tree.create("/org/eng/bob", attributes={"role": "qa"})
-tree.create("/org/sales/carol", attributes={"role": "sales"})
+tree.create("/org/eng/alice", attributes={"role": "dev", "level": 3})
+tree.create("/org/eng/bob", attributes={"role": "qa", "level": 2})
+tree.create("/org/sales/carol", attributes={"role": "sales", "level": 4})
+```
 
+### Basic Iteration
+
+```python
 # Walk all resources
 for resource in tree.walk():
     print(f"{resource.path}: {dict(resource.attributes)}")
-# /org: {}
-# /org/eng: {}
-# /org/eng/alice: {'role': 'dev'}
-# /org/eng/bob: {'role': 'qa'}
-# /org/sales: {}
-# /org/sales/carol: {'role': 'sales'}
 
 # Walk subtree only
 for resource in tree.walk("/org/eng"):
     print(resource.path)
-# /org/eng
-# /org/eng/alice
-# /org/eng/bob
+```
+
+### Find by Attribute
+
+```python
+# Find all devs
+devs = [r for r in tree.walk() if r.attributes.get("role") == "dev"]
+
+# Find first match
+first_dev = next((r for r in tree.walk() if r.attributes.get("role") == "dev"), None)
+
+# Multiple conditions
+senior_devs = [
+    r for r in tree.walk()
+    if r.attributes.get("role") == "dev" and r.attributes.get("level", 0) >= 3
+]
+```
+
+### Filter by Predicate
+
+```python
+# Resources with children
+parents = [r for r in tree.walk() if r.children]
+
+# Leaf nodes only
+leaves = [r for r in tree.walk() if not r.children]
+
+# Custom predicate
+def is_senior(r):
+    return r.attributes.get("level", 0) >= 3
+
+seniors = [r for r in tree.walk() if is_senior(r)]
+```
+
+### Existence and Counting
+
+```python
+# Check if any match exists
+has_qa = any(r.attributes.get("role") == "qa" for r in tree.walk())
+
+# Count matches
+num_devs = sum(1 for r in tree.walk() if r.attributes.get("role") == "dev")
+```
+
+### Collect Attributes
+
+```python
+# All unique attribute keys
+all_keys = {k for r in tree.walk() for k in r.attributes}
+
+# All values for a specific key
+all_roles = {r.attributes["role"] for r in tree.walk() if "role" in r.attributes}
+
+# Build a lookup dict
+by_role = {}
+for r in tree.walk():
+    role = r.attributes.get("role")
+    if role:
+        by_role.setdefault(role, []).append(r)
+```
+
+### Tree Metrics
+
+```python
+# Tree depth (recursive)
+def depth(r):
+    return 1 if not r.children else 1 + max(depth(c) for c in r.children.values())
+
+tree_depth = depth(tree.root)
+
+# Count at each level
+from collections import Counter
+levels = Counter(r.path.count("/") for r in tree.walk())
 ```
 
 ## Tree Inspection
