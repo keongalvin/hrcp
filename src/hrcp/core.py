@@ -297,49 +297,6 @@ class ResourceTree:
             msg = f"Missing required attributes at {path}: {', '.join(missing)}"
             raise ValidationError(msg)
 
-    def clone(self) -> ResourceTree:
-        """Create a deep copy of this tree.
-
-        Returns a new ResourceTree with the same structure, attributes,
-        and schema definitions, but independent of the original.
-
-        Returns:
-            A new ResourceTree that is a deep copy of this one.
-        """
-        from hrcp.operations import clone
-
-        return clone(self)
-
-    def clone_subtree(self, path: str) -> ResourceTree:
-        """Clone a subtree rooted at the given path.
-
-        Args:
-            path: Path to the resource to use as root of new tree.
-
-        Returns:
-            A new ResourceTree rooted at the specified resource.
-
-        Raises:
-            KeyError: If the path does not exist.
-        """
-        from hrcp.operations import clone_subtree
-
-        return clone_subtree(self, path)
-
-    def merge(self, source: ResourceTree) -> None:
-        """Merge another tree into this one.
-
-        Recursively merges resources from source into this tree:
-        - New resources are added
-        - Existing resource attributes are updated from source
-
-        Args:
-            source: The tree to merge from.
-        """
-        from hrcp.operations import merge
-
-        merge(self, source)
-
     @property
     def root(self) -> Resource:
         """The root Resource of the tree."""
@@ -759,57 +716,6 @@ class ResourceTree:
             lines.append("")
 
         return "\n".join(lines)
-
-    def copy(self, source_path: str, dest_path: str) -> Resource:
-        """Copy a resource (and its subtree) to a new path.
-
-        Args:
-            source_path: Path of resource to copy.
-            dest_path: Destination path for the copy.
-
-        Returns:
-            The newly created resource.
-
-        Raises:
-            KeyError: If source path doesn't exist.
-        """
-        from hrcp.operations import copy
-
-        return copy(self, source_path, dest_path)
-
-    def move(self, source_path: str, dest_path: str) -> Resource:
-        """Move a resource (and its subtree) to a new path.
-
-        Args:
-            source_path: Path of resource to move.
-            dest_path: Destination path.
-
-        Returns:
-            The moved resource at its new location.
-
-        Raises:
-            KeyError: If source path doesn't exist.
-        """
-        from hrcp.operations import move
-
-        return move(self, source_path, dest_path)
-
-    def rename(self, path: str, new_name: str) -> Resource:
-        """Rename a resource in place.
-
-        Args:
-            path: Path to the resource to rename.
-            new_name: New name for the resource.
-
-        Returns:
-            The renamed resource.
-
-        Raises:
-            KeyError: If path doesn't exist.
-        """
-        from hrcp.operations import rename
-
-        return rename(self, path, new_name)
 
     def __repr__(self) -> str:
         """Return a string representation of the ResourceTree."""

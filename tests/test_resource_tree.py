@@ -300,23 +300,3 @@ class TestResourceTreeSize:
             tree.create(f"/{root_name}/{name}")
 
         assert len(tree) == 1 + len(child_names)
-
-
-class TestResourceTreeRename:
-    """Test renaming resources."""
-
-    @given(root_name=valid_name, fake=valid_name)
-    def test_rename_invalid_path_raises(self, root_name, fake):
-        """rename() raises KeyError for invalid path."""
-        if root_name == fake:
-            fake = fake + "x"
-        tree = ResourceTree(root_name=root_name)
-        with pytest.raises(KeyError):
-            tree.rename(f"/{fake}", "newname")
-
-    @given(root_name=valid_name, new_name=valid_name)
-    def test_rename_root_raises(self, root_name, new_name):
-        """rename() raises ValueError when renaming root."""
-        tree = ResourceTree(root_name=root_name)
-        with pytest.raises(ValueError, match="Cannot rename root"):
-            tree.rename(f"/{root_name}", new_name)

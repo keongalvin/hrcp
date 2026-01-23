@@ -1,6 +1,6 @@
 # Philosophy & Scope
 
-HRCP is intentionally minimal: **~2000 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
+HRCP is intentionally minimal: **<1800 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
 
 ## Core Focus
 
@@ -11,7 +11,9 @@ HRCP is intentionally minimal: **~2000 lines of dependency-free Python** solving
 
 ## DIY Patterns
 
-These are trivial to implement yourself using `tree.walk()`:
+These are trivial—we don't include them because they're one-liners.
+
+### Search & Filter
 
 ```python
 # find by attribute
@@ -20,13 +22,8 @@ These are trivial to implement yourself using `tree.walk()`:
 # find first match
 next((r for r in tree.walk() if r.attributes.get("env") == "prod"), None)
 
-# filter by predicate
-[r for r in tree.walk() if len(r.children) > 0]
-
-# exists check
+# exists / count
 any(r.attributes.get("critical") for r in tree.walk())
-
-# count
 sum(1 for r in tree.walk() if r.attributes.get("enabled"))
 
 # all attribute keys
@@ -36,7 +33,26 @@ sum(1 for r in tree.walk() if r.attributes.get("enabled"))
 def depth(r): return 1 if not r.children else 1 + max(depth(c) for c in r.children.values())
 ```
 
-We don't include these as methods because they're one-liners that don't need library support.
+### Tree Operations
+
+```python
+# clone tree
+cloned = ResourceTree.from_dict(tree.to_dict())
+
+# merge trees (source into target)
+for r in source.walk():
+    target_r = target.get(r.path) or target.create(r.path)
+    for k, v in r.attributes.items():
+        target_r.set_attribute(k, v)
+
+# copy resource
+data = tree.get(src).attributes.copy()
+tree.create(dest, attributes=data)
+
+# move resource
+tree.create(dest, attributes=tree.get(src).attributes.copy())
+tree.delete(src)
+```
 
 ## Out of Scope
 
