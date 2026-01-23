@@ -438,18 +438,18 @@ class TestMultipleWildcardsInSegment:
 
     @given(root=valid_name)
     def test_wildcard_middle_of_segment(self, root):
-        """Wildcard in middle: ser*1."""
+        """Wildcard in middle: host*1."""
         tree = ResourceTree(root_name=root)
-        tree.create(f"/{root}/server1")
-        tree.create(f"/{root}/service1")
-        tree.create(f"/{root}/server2")
+        tree.create(f"/{root}/host01")
+        tree.create(f"/{root}/hosting1")
+        tree.create(f"/{root}/host02")
 
-        results = tree.query(f"/{root}/ser*1")
+        results = tree.query(f"/{root}/host*1")
 
         paths = [r.path for r in results]
-        assert f"/{root}/server1" in paths
-        assert f"/{root}/service1" in paths
-        assert f"/{root}/server2" not in paths
+        assert f"/{root}/host01" in paths
+        assert f"/{root}/hosting1" in paths
+        assert f"/{root}/host02" not in paths
 
     @given(root=valid_name)
     def test_multiple_wildcards_in_segment(self, root):
@@ -586,3 +586,54 @@ class TestMalformedPatterns:
         # Should match the root
         paths = [r.path for r in results]
         assert f"/{root}" in paths
+
+
+class TestPatternToRegexCorrectness:
+    """Test that pattern_to_regex produces correct regex strings."""
+
+    def test_no_duplicate_anchors(self):
+        """Recursive patterns should not produce duplicate $ anchors."""
+        from hrcp.wildcards import pattern_to_regex
+
+        # Multiple ** in pattern
+        regex = pattern_to_regex("/**/a/**/b/**/c")
+
+        # Should have exactly one $ at the end
+        assert regex.endswith("$")
+        assert not regex.endswith("$$")
+
+    def test_deeply_nested_double_wildcards(self):
+        """Deep nesting of ** should not cause exponential anchor growth."""
+        from hrcp.wildcards import pattern_to_regex
+
+        regex = pattern_to_regex("/**/a/**/b/**/c/**/d/**/e/**/f")
+
+        # Count $ signs - should be exactly 1
+        dollar_count = regex.count("$")
+        assert dollar_count == 1, f"Expected 1 $, got {dollar_count}: {regex}"
+
+    @given(
+        root=valid_name,
+        segments=st.lists(valid_name, min_size=1, max_size=5, unique=True),
+    )
+    def test_complex_pattern_matches_correctly(self, root, segments):
+        """Complex patterns with multiple ** should match correct paths."""
+        from hrcp.wildcards import match_pattern
+
+        # Build a path and pattern with ** between each segment
+        path = f"/{root}/" + "/".join(segments)
+        pattern = f"/{root}/**/" + "/**/".join(segments)
+
+        # Should match
+        assert match_pattern(path, pattern)
+
+    @given(root=valid_name)
+    def test_three_consecutive_double_wildcards(self, root):
+        """Three consecutive ** should work correctly."""
+        tree = ResourceTree(root_name=root)
+        tree.create(f"/{root}/a/b/c")
+
+        results = tree.query(f"/{root}/**/**/**/c")
+
+        paths = [r.path for r in results]
+        assert f"/{root}/a/b/c" in paths
