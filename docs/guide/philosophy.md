@@ -76,7 +76,7 @@ These features were considered but rejected as beyond the library's scope:
 | LATERAL propagation | Changes core model |
 | Conditional Propagation | Too complex |
 | Watch/Subscribe | Real-time is out of scope |
-| Conditional Required (schema) | Too complex |
+| Schema Validation | Too complex—use Pydantic/attrs externally |
 
 ## Guidelines for New Features
 

@@ -8,11 +8,11 @@ This section provides detailed API documentation for all HRCP modules.
 |--------|-------------|
 | [`hrcp`](hrcp.md) | Main package - exports all public API |
 | `hrcp.core` | Core classes: `ResourceTree`, `Resource` |
-| `hrcp.propagation` | `PropagationMode` enum and propagation logic |
-| `hrcp.provenance` | Provenance tracking |
-| `hrcp.schema` | Schema validation |
-| `hrcp.wildcards` | Wildcard pattern matching |
-| `hrcp.path` | Path utilities |
+| `hrcp.propagation` | `PropagationMode` enum |
+| `hrcp.provenance` | `Provenance` dataclass and `get_value()` function |
+| `hrcp.wildcards` | Wildcard pattern matching (`match_pattern`) |
+| `hrcp.path` | Path utilities (`normalize_path`, `split_path`, etc.) |
+| `hrcp.serialization` | Internal serialization helpers |
 
 ## Quick Reference
 
@@ -55,13 +55,6 @@ value = get_value(resource, "key", PropagationMode.DOWN)
 # With provenance tracking
 prov = get_value(resource, "key", PropagationMode.DOWN, with_provenance=True)
 print(prov.value, prov.source_path)
-```
-
-### Defining Schemas
-
-```python
-tree.define("port", type_=int, ge=1, le=65535)
-tree.define("env", choices=("dev", "staging", "prod"))
 ```
 
 ### Serialization

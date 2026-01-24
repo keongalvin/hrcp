@@ -122,19 +122,6 @@ tree.query("/platform/**/config")
 tree.query_values("/platform/*/api", "port", PropagationMode.NONE)
 ```
 
-## Schema Validation
-
-Enforce constraints:
-
-```python
-tree.define("port", type_=int, ge=1, le=65535)
-tree.define("env", choices=("dev", "staging", "prod"))
-
-tree.root.set_attribute("port", 8080)      # OK
-tree.root.set_attribute("port", "bad")     # ValidationError
-tree.root.set_attribute("port", 99999)     # ValidationError
-```
-
 ## Serialization
 
 ```python

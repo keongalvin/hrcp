@@ -11,7 +11,6 @@ from hrcp import (
     PropagationMode,
     get_value,
     Provenance,
-    ValidationError,
 )
 ```
 
@@ -24,19 +23,20 @@ from hrcp import (
         - root
         - create
         - get
+        - delete
+        - walk
         - query
         - query_values
-        - define
-        - to_json
-        - to_json_string
-        - from_json
-        - from_json_string
-        - to_yaml
-        - to_yaml_string
-        - from_yaml_file
-        - from_yaml_string
         - to_dict
         - from_dict
+        - to_json
+        - from_json
+        - to_yaml
+        - from_yaml
+        - from_yaml_file
+        - to_toml
+        - from_toml
+        - from_toml_file
 
 ::: hrcp.Resource
     options:
@@ -48,6 +48,7 @@ from hrcp import (
         - attributes
         - set_attribute
         - get_attribute
+        - delete_attribute
 
 ::: hrcp.PropagationMode
     options:
@@ -63,11 +64,23 @@ from hrcp import (
         - value
         - source_path
         - mode
+        - key_sources
+        - contributing_paths
 
 ## Functions
 
 ::: hrcp.get_value
 
-## Exceptions
+## Path Utilities
 
-::: hrcp.ValidationError
+::: hrcp.normalize_path
+
+::: hrcp.split_path
+
+::: hrcp.join_path
+
+::: hrcp.parent_path
+
+::: hrcp.basename
+
+::: hrcp.match_pattern

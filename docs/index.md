@@ -35,7 +35,7 @@
 Configuration in hierarchical systems (orgs → teams → projects, regions → clusters → services) needs:
 
 - **Inheritance**: Set defaults at the top, override below
-- **Aggregation**: Roll up values from children  
+- **Aggregation**: Roll up values from children
 - **Traceability**: Know exactly which node provided each value
 
 HRCP solves this with ~2000 lines of dependency-free Python.
@@ -70,7 +70,6 @@ timeout = get_value(db, "timeout", PropagationMode.DOWN)
 | Hierarchical inheritance | ✅ | ❌ | ❌ |
 | Value aggregation | ✅ | ❌ | ❌ |
 | Provenance tracking | ✅ | ❌ | ❌ |
-| Type validation | ✅ | Varies | ❌ |
 | Zero dependencies | ✅ | Varies | ✅ |
 
 ## Installation

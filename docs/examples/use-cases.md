@@ -148,7 +148,7 @@ def get_user_features(tree, user_path):
     user = tree.get(user_path)
     if not user:
         user = tree.root  # Default to global features
-    
+
     return {
         "new_checkout": get_value(user, "new_checkout", PropagationMode.DOWN),
         "dark_mode": get_value(user, "dark_mode", PropagationMode.DOWN),
@@ -250,49 +250,37 @@ print(has_admin_access(tree.get("/org/engineering/secrets"), "carol@company.com"
 # False (only viewer)
 ```
 
-## Configuration Validation Report
+## Configuration Audit Report
 
-Generate a validation report for all resources.
+Generate an audit report showing where values come from across the tree.
 
 ```python
 tree = ResourceTree(root_name="services")
 
-# Define schemas
-tree.define("port", type_=int, ge=1, le=65535)
-tree.define("replicas", type_=int, ge=1, le=100)
-tree.define("env", choices=("dev", "staging", "prod"))
-
-# Set up services
+# Set up services with inherited and local values
 tree.root.set_attribute("env", "prod")
+tree.root.set_attribute("timeout", 30)
 tree.create("/services/api", attributes={"port": 8080, "replicas": 3})
 tree.create("/services/worker", attributes={"replicas": 5})
-tree.create("/services/cache", attributes={"port": 6379})
+tree.create("/services/cache", attributes={"port": 6379, "timeout": 60})
 
-def validation_report(tree, required_attrs):
-    """Generate a validation report."""
-    print("Configuration Validation Report")
+def audit_report(tree, attrs):
+    """Generate an audit report showing value provenance."""
+    print("Configuration Audit Report")
     print("=" * 60)
-    
+
     for resource in tree.query("/**"):
-        issues = []
-        
-        for attr in required_attrs:
+        print(f"\n{resource.path}")
+
+        for attr in attrs:
             prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
-            if prov.value is None:
-                issues.append(f"Missing: {attr}")
-        
-        if issues:
-            print(f"\n{resource.path}")
-            for issue in issues:
-                print(f"  ⚠ {issue}")
-        else:
-            print(f"\n{resource.path} ✓")
-            for attr in required_attrs:
-                prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
+            if prov.value is not None:
                 source = "(local)" if prov.source_path == resource.path else f"(from {prov.source_path})"
                 print(f"  {attr}: {prov.value} {source}")
+            else:
+                print(f"  {attr}: not set")
 
-validation_report(tree, ["env", "port", "replicas"])
+audit_report(tree, ["env", "port", "replicas", "timeout"])
 ```
 
 ## Kubernetes-Style Namespace Configuration
@@ -351,7 +339,7 @@ def get_namespace_config(tree, namespace_path):
     ns = tree.get(namespace_path)
     if not ns:
         return None
-    
+
     return {
         "quota": get_value(ns, "resource_quota", PropagationMode.MERGE_DOWN),
         "limits": get_value(ns, "limit_range", PropagationMode.MERGE_DOWN),
@@ -414,7 +402,7 @@ def generate_manifest(tree, app, env):
     """Generate Kubernetes manifest values for an app in an environment."""
     path = f"/gitops/apps/{app}/{env}"
     resource = tree.get(path)
-    
+
     return {
         "app": app,
         "environment": env,
@@ -429,7 +417,7 @@ for env in ["dev", "staging", "prod"]:
     print(f"{env}: replicas={manifest['replicas']}, cpu_limit={manifest['resources']['limits']['cpu']}")
 
 # dev: replicas=1, cpu_limit=500m
-# staging: replicas=3, cpu_limit=500m  
+# staging: replicas=3, cpu_limit=500m
 # prod: replicas=5, cpu_limit=2
 ```
 
@@ -607,7 +595,7 @@ tree.create("/catalog/electronics/phones", attributes={
     "warranty": {"months": 12, "accidental_damage": False}
 })
 
-# Clothing category  
+# Clothing category
 tree.create("/catalog/clothing", attributes={
     "return_policy": {"days": 60}  # Extended returns
 })

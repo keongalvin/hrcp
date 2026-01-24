@@ -1,6 +1,6 @@
 # Serialization
 
-HRCP supports multiple formats for saving and loading resource trees: JSON, YAML, and Python dicts.
+HRCP supports multiple formats for saving and loading resource trees: JSON, YAML, TOML, and Python dicts.
 
 ## JSON
 
@@ -15,9 +15,6 @@ tree.create("/platform/api", attributes={"port": 8080})
 
 # Save to file
 tree.to_json("config.json")
-
-# Or get as string
-json_string = tree.to_json_string()
 ```
 
 ### Load from JSON
@@ -25,9 +22,6 @@ json_string = tree.to_json_string()
 ```python
 # Load from file
 tree = ResourceTree.from_json("config.json")
-
-# Or from string
-tree = ResourceTree.from_json_string(json_string)
 ```
 
 ### JSON Format
@@ -46,23 +40,19 @@ tree = ResourceTree.from_json_string(json_string)
         "port": 8080
       }
     }
-  },
-  "schemas": {}
+  }
 }
 ```
 
 ## YAML
 
-YAML is often preferred for human-readable configuration files.
+YAML is often preferred for human-readable configuration files. Requires `pyyaml` to be installed.
 
 ### Save to YAML
 
 ```python
 # Save to file
 tree.to_yaml("config.yaml")
-
-# Or get as string
-yaml_string = tree.to_yaml_string()
 ```
 
 ### Load from YAML
@@ -71,8 +61,8 @@ yaml_string = tree.to_yaml_string()
 # Load from file
 tree = ResourceTree.from_yaml_file("config.yaml")
 
-# Or from string
-tree = ResourceTree.from_yaml_string(yaml_string)
+# Or from a file handle
+tree = ResourceTree.from_yaml(file_handle)
 ```
 
 ### YAML Format
@@ -86,7 +76,27 @@ resources:
   /platform/api:
     attributes:
       port: 8080
-schemas: {}
+```
+
+## TOML
+
+TOML support requires `tomli` (for reading) and `tomli-w` (for writing) to be installed.
+
+### Save to TOML
+
+```python
+# Save to file
+tree.to_toml("config.toml")
+```
+
+### Load from TOML
+
+```python
+# Load from file
+tree = ResourceTree.from_toml_file("config.toml")
+
+# Or from a file handle
+tree = ResourceTree.from_toml(file_handle)
 ```
 
 ## Dictionary
@@ -119,22 +129,6 @@ data = {
 }
 
 tree = ResourceTree.from_dict(data)
-```
-
-## Schemas in Serialization
-
-Schemas are also serialized and restored:
-
-```python
-tree = ResourceTree(root_name="platform")
-tree.define("port", type_=int, ge=1, le=65535)
-tree.define("env", choices=("dev", "staging", "prod"))
-
-tree.to_yaml("config.yaml")
-
-# Later...
-tree = ResourceTree.from_yaml_file("config.yaml")
-# Schemas are restored and enforced
 ```
 
 ## Practical Patterns
@@ -170,18 +164,18 @@ def load_layered_config(env: str) -> ResourceTree:
     """Load base config and apply environment overlay."""
     # Load base
     tree = ResourceTree.from_yaml_file("config/base.yaml")
-    
+
     # Load and merge environment-specific config
     env_file = f"config/{env}.yaml"
     env_tree = ResourceTree.from_yaml_file(env_file)
-    
+
     # Copy environment-specific attributes
     for resource in env_tree.query("/**"):
         target = tree.get(resource.path)
         if target:
             for key, value in resource.attributes.items():
                 target.set_attribute(key, value)
-    
+
     return tree
 
 # Usage

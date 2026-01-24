@@ -115,4 +115,4 @@ print(f"Tier '{prov.value}' comes from {prov.source_path}")
 - Learn about [Propagation Modes](../guide/propagation.md) in detail
 - Understand [Provenance](../guide/provenance.md) tracking
 - Explore [Wildcards](../guide/wildcards.md) for querying multiple resources
-- Add [Schema Validation](../guide/schema.md) to your attributes
+- See [Serialization](../guide/serialization.md) for saving and loading trees
