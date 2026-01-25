@@ -7,6 +7,7 @@ A Python library for managing hierarchical configuration with:
 - Provenance: Track where every value came from
 """
 
+from hrcp.core import Resource
 from hrcp.core import ResourceTree
 from hrcp.propagation import PropagationMode
 from hrcp.provenance import Provenance
@@ -15,6 +16,7 @@ from hrcp.provenance import get_value
 __all__ = [
     "PropagationMode",
     "Provenance",
+    "Resource",
     "ResourceTree",
     "get_value",
 ]
