@@ -5,6 +5,16 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from hrcp.propagation import PropagationMode
+from hrcp.provenance import get_value
+from hrcp.serialization import load_children
+from hrcp.serialization import resource_to_dict
+from hrcp.serialization import tree_from_dict
+from hrcp.serialization import tree_from_json
+from hrcp.serialization import tree_to_dict
+from hrcp.serialization import tree_to_json
+from hrcp.wildcards import match_pattern
+
 
 class Resource:
     """A node in the HRCP configuration tree.
@@ -347,8 +357,6 @@ class ResourceTree:
         Returns:
             List of matching Resources.
         """
-        from hrcp.wildcards import match_pattern
-
         return [
             resource
             for resource in self.walk()
@@ -359,7 +367,7 @@ class ResourceTree:
         self,
         pattern: str,
         key: str,
-        mode: Any,  # PropagationMode
+        mode: PropagationMode,
     ) -> list[Any]:
         """Get attribute values from resources matching a pattern.
 
@@ -371,9 +379,6 @@ class ResourceTree:
         Returns:
             List of values from matching resources (excludes None values).
         """
-        from hrcp.propagation import PropagationMode
-        from hrcp.provenance import get_value
-
         results: list[Any] = []
         for resource in self.query(pattern):
             value = get_value(resource, key, mode)
@@ -391,14 +396,10 @@ class ResourceTree:
         Returns:
             A dict representation of the tree that can be serialized to JSON.
         """
-        from hrcp.serialization import tree_to_dict
-
         return tree_to_dict(self)
 
     def _resource_to_dict(self, resource: Resource) -> dict[str, Any]:
         """Recursively serialize a Resource to a dict."""
-        from hrcp.serialization import resource_to_dict
-
         return resource_to_dict(resource)
 
     @classmethod
@@ -411,8 +412,6 @@ class ResourceTree:
         Returns:
             A new ResourceTree with the data.
         """
-        from hrcp.serialization import tree_from_dict
-
         return tree_from_dict(data)
 
     @classmethod
@@ -423,8 +422,6 @@ class ResourceTree:
         children_data: dict[str, dict[str, Any]],
     ) -> None:
         """Recursively load children from dict data."""
-        from hrcp.serialization import load_children
-
         load_children(tree, parent, children_data)
 
     def to_json(self, path: str, indent: int = 2) -> None:
@@ -434,8 +431,6 @@ class ResourceTree:
             path: Path to the output JSON file.
             indent: Indentation level for human-readable output.
         """
-        from hrcp.serialization import tree_to_json
-
         tree_to_json(self, path, indent)
 
     @classmethod
@@ -448,96 +443,7 @@ class ResourceTree:
         Returns:
             A new ResourceTree loaded from the file.
         """
-        from hrcp.serialization import tree_from_json
-
         return tree_from_json(path)
-
-    def to_yaml(self, path: str | None = None) -> str:
-        """Serialize the tree to a YAML string.
-
-        Args:
-            path: Optional file path to write to. If None, returns string.
-
-        Returns:
-            A YAML string representation of the tree.
-        """
-        from hrcp.serialization import tree_to_yaml
-
-        return tree_to_yaml(self, path)
-
-    @classmethod
-    def from_yaml(cls, yaml_str: str) -> ResourceTree:
-        """Create a ResourceTree from a YAML string.
-
-        Args:
-            yaml_str: A YAML string representation of the tree.
-
-        Returns:
-            A new ResourceTree with the data.
-        """
-        from hrcp.serialization import tree_from_yaml
-
-        return tree_from_yaml(yaml_str)
-
-    @classmethod
-    def from_yaml_file(cls, path: str) -> ResourceTree:
-        """Create a ResourceTree from a YAML file.
-
-        Args:
-            path: Path to the YAML file.
-
-        Returns:
-            A new ResourceTree loaded from the file.
-        """
-        from hrcp.serialization import tree_from_yaml_file
-
-        return tree_from_yaml_file(path)
-
-    def to_toml(self, path: str | None = None) -> str:
-        """Serialize the tree to a TOML string.
-
-        TOML format uses nested tables for children. Root attributes
-        are at top level, children become [table] sections.
-
-        Args:
-            path: Optional file path to write to. If None, returns string.
-
-        Returns:
-            A TOML string representation of the tree.
-        """
-        from hrcp.serialization import tree_to_toml
-
-        return tree_to_toml(self, path)
-
-    @classmethod
-    def from_toml(cls, toml_str: str, root_name: str = "root") -> ResourceTree:
-        """Create a ResourceTree from a TOML string.
-
-        Args:
-            toml_str: A TOML string.
-            root_name: Name for the root resource.
-
-        Returns:
-            A new ResourceTree with the data.
-        """
-        from hrcp.serialization import tree_from_toml
-
-        return tree_from_toml(toml_str, root_name)
-
-    @classmethod
-    def from_toml_file(cls, path: str, root_name: str = "root") -> ResourceTree:
-        """Create a ResourceTree from a TOML file.
-
-        Args:
-            path: Path to the TOML file.
-            root_name: Name for the root resource.
-
-        Returns:
-            A new ResourceTree loaded from the file.
-        """
-        from hrcp.serialization import tree_from_toml_file
-
-        return tree_from_toml_file(path, root_name)
 
     def __repr__(self) -> str:
         """Return a string representation of the ResourceTree."""

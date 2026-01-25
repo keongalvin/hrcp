@@ -1,18 +1,12 @@
 # API Reference
 
-This section provides detailed API documentation for all HRCP modules.
+## Public API
 
-## Module Overview
+```python
+from hrcp import ResourceTree, PropagationMode, get_value, Provenance
+```
 
-| Module | Description |
-|--------|-------------|
-| [`hrcp`](hrcp.md) | Main package - exports all public API |
-| `hrcp.core` | Core classes: `ResourceTree`, `Resource` |
-| `hrcp.propagation` | `PropagationMode` enum |
-| `hrcp.provenance` | `Provenance` dataclass and `get_value()` function |
-| `hrcp.wildcards` | Wildcard pattern matching (`match_pattern`) |
-| `hrcp.path` | Path utilities (`normalize_path`, `split_path`, etc.) |
-| `hrcp.serialization` | Internal serialization helpers |
+That's it. Four exports.
 
 ## Quick Reference
 
@@ -64,10 +58,6 @@ print(prov.value, prov.source_path)
 tree.to_json("config.json")
 tree = ResourceTree.from_json("config.json")
 
-# YAML
-tree.to_yaml("config.yaml")
-tree = ResourceTree.from_yaml_file("config.yaml")
-
 # Dict
 data = tree.to_dict()
 tree = ResourceTree.from_dict(data)
@@ -75,4 +65,4 @@ tree = ResourceTree.from_dict(data)
 
 ## Full API Documentation
 
-See [hrcp](hrcp.md) for complete API documentation with all classes, methods, and parameters.
+See [hrcp](hrcp.md) for complete API documentation.

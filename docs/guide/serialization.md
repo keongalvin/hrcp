@@ -1,6 +1,6 @@
 # Serialization
 
-HRCP supports multiple formats for saving and loading resource trees: JSON, YAML, TOML, and Python dicts.
+HRCP supports saving and loading resource trees via JSON and Python dicts.
 
 ## JSON
 
@@ -24,81 +24,6 @@ tree.to_json("config.json")
 tree = ResourceTree.from_json("config.json")
 ```
 
-### JSON Format
-
-```json
-{
-  "root_name": "platform",
-  "resources": {
-    "/platform": {
-      "attributes": {
-        "env": "prod"
-      }
-    },
-    "/platform/api": {
-      "attributes": {
-        "port": 8080
-      }
-    }
-  }
-}
-```
-
-## YAML
-
-YAML is often preferred for human-readable configuration files. Requires `pyyaml` to be installed.
-
-### Save to YAML
-
-```python
-# Save to file
-tree.to_yaml("config.yaml")
-```
-
-### Load from YAML
-
-```python
-# Load from file
-tree = ResourceTree.from_yaml_file("config.yaml")
-
-# Or from a file handle
-tree = ResourceTree.from_yaml(file_handle)
-```
-
-### YAML Format
-
-```yaml
-root_name: platform
-resources:
-  /platform:
-    attributes:
-      env: prod
-  /platform/api:
-    attributes:
-      port: 8080
-```
-
-## TOML
-
-TOML support requires `tomli` (for reading) and `tomli-w` (for writing) to be installed.
-
-### Save to TOML
-
-```python
-# Save to file
-tree.to_toml("config.toml")
-```
-
-### Load from TOML
-
-```python
-# Load from file
-tree = ResourceTree.from_toml_file("config.toml")
-
-# Or from a file handle
-tree = ResourceTree.from_toml(file_handle)
-```
-
 ## Dictionary
 
 For programmatic manipulation or integration with other systems.
@@ -109,21 +34,22 @@ For programmatic manipulation or integration with other systems.
 data = tree.to_dict()
 
 # data is a regular Python dict
-print(data["root_name"])  # "platform"
-print(data["resources"])  # {"/platform": {...}, ...}
+print(data["name"])        # "platform"
+print(data["attributes"])  # {"env": "prod"}
+print(data["children"])    # {"api": {...}}
 ```
 
 ### Create from Dict
 
 ```python
 data = {
-    "root_name": "platform",
-    "resources": {
-        "/platform": {
-            "attributes": {"env": "prod"}
-        },
-        "/platform/api": {
-            "attributes": {"port": 8080}
+    "name": "platform",
+    "attributes": {"env": "prod"},
+    "children": {
+        "api": {
+            "name": "api",
+            "attributes": {"port": 8080},
+            "children": {}
         }
     }
 }
@@ -138,13 +64,11 @@ tree = ResourceTree.from_dict(data)
 Store configuration in version control:
 
 ```python
-# deploy.py
 from hrcp import ResourceTree
 
 def load_config():
-    """Load configuration from YAML files."""
-    tree = ResourceTree.from_yaml_file("config/base.yaml")
-    return tree
+    """Load configuration from JSON."""
+    return ResourceTree.from_json("config/base.json")
 
 def main():
     tree = load_config()
@@ -153,33 +77,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
-### Environment Layering
-
-Merge base config with environment-specific overrides:
-
-```python
-def load_layered_config(env: str) -> ResourceTree:
-    """Load base config and apply environment overlay."""
-    # Load base
-    tree = ResourceTree.from_yaml_file("config/base.yaml")
-
-    # Load and merge environment-specific config
-    env_file = f"config/{env}.yaml"
-    env_tree = ResourceTree.from_yaml_file(env_file)
-
-    # Copy environment-specific attributes
-    for resource in env_tree.query("/**"):
-        target = tree.get(resource.path)
-        if target:
-            for key, value in resource.attributes.items():
-                target.set_attribute(key, value)
-
-    return tree
-
-# Usage
-tree = load_layered_config("production")
 ```
 
 ### Backup and Restore
@@ -202,8 +99,8 @@ def restore_tree(backup_file: str) -> ResourceTree:
 ### API Integration
 
 ```python
-import json
 from flask import Flask, jsonify, request
+from hrcp import ResourceTree
 
 app = Flask(__name__)
 tree = ResourceTree(root_name="config")
@@ -232,19 +129,3 @@ def get_resource(resource_path):
         })
     return jsonify({"error": "not found"}), 404
 ```
-
-## Format Comparison
-
-| Feature | JSON | YAML | Dict |
-|---------|------|------|------|
-| Human readable | Good | Best | N/A |
-| Comments | No | Yes | N/A |
-| File size | Compact | Larger | N/A |
-| Parse speed | Fast | Slower | Instant |
-| Programmatic use | Via string | Via string | Direct |
-
-Choose based on your use case:
-
-- **JSON**: APIs, compact storage, JavaScript interop
-- **YAML**: Configuration files, human editing
-- **Dict**: In-memory manipulation, testing

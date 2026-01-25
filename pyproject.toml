@@ -26,9 +26,6 @@ dynamic = ["version"]
 readme = "README.md"
 
 [project.optional-dependencies]
-yaml = ["pyyaml>=6.0"]
-toml = ["tomli-w>=1.0.0"]
-all = ["pyyaml>=6.0", "tomli-w>=1.0.0"]
 
 [project.urls]
 Documentation = "https://hrcp.readthedocs.io/"
@@ -43,9 +40,6 @@ dev = [
     "hypothesis>=6.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
-    # Include optional dependencies for testing
-    "pyyaml>=6.0",
-    "tomli-w>=1.0.0",
 ]
 docs = [
     "mkdocs>=1.6.0",

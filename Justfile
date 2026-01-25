@@ -54,7 +54,7 @@ check-uv: (check-tool "uv" "https://docs.astral.sh/uv/#installation")
 
 [group('python-dev')]
 python-format:
-    @uvx ruff check check --exit-zero --no-cache --force-exclude --unsafe-fixes --fix {{RUFF_FORMAT_PATHS}}
+    @uvx ruff check --exit-zero --no-cache --force-exclude --unsafe-fixes --fix {{RUFF_FORMAT_PATHS}}
     @uvx ruff format {{RUFF_FORMAT_PATHS}}
 
 # Run linters.

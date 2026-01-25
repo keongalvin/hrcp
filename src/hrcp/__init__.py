@@ -5,31 +5,16 @@ A Python library for managing hierarchical configuration with:
 - Aggregation: Values aggregate UP from descendants
 - Merge: Deep merge of dicts through hierarchy
 - Provenance: Track where every value came from
-- Wildcards: Query across hierarchy with patterns (* and **)
 """
 
-from hrcp.core import Resource
 from hrcp.core import ResourceTree
-from hrcp.path import basename
-from hrcp.path import join_path
-from hrcp.path import normalize_path
-from hrcp.path import parent_path
-from hrcp.path import split_path
 from hrcp.propagation import PropagationMode
 from hrcp.provenance import Provenance
 from hrcp.provenance import get_value
-from hrcp.wildcards import match_pattern
 
 __all__ = [
     "PropagationMode",
     "Provenance",
-    "Resource",
     "ResourceTree",
-    "basename",
     "get_value",
-    "join_path",
-    "match_pattern",
-    "normalize_path",
-    "parent_path",
-    "split_path",
 ]

@@ -2,6 +2,11 @@
 
 **Hierarchical Resource Configuration with Provenance**
 
+[![PyPI version](https://img.shields.io/pypi/v/hrcp.svg)](https://pypi.org/project/hrcp/)
+[![Python versions](https://img.shields.io/pypi/pyversions/hrcp.svg)](https://pypi.org/project/hrcp/)
+[![License](https://img.shields.io/pypi/l/hrcp.svg)](https://github.com/keongalvin/hrcp/blob/main/LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-readthedocs-blue.svg)](https://hrcp.readthedocs.io/)
+
 A minimal Python library for hierarchical configuration where you always know where values came from.
 
 ## The Problem
@@ -11,7 +16,7 @@ Configuration in hierarchical systems (orgs → teams → projects, regions → 
 - **Aggregation**: Roll up values from children
 - **Traceability**: Know exactly which node provided each value
 
-HRCP solves this with ~2000 lines of dependency-free Python.
+HRCP solves this with ~1200 lines of dependency-free Python.
 
 ## Installation
 
@@ -49,6 +54,13 @@ print(prov.source_path)  # "/platform" - the root provided this value
 ```
 
 ## Propagation Modes
+
+| Mode | Direction | Use Case |
+|------|-----------|----------|
+| `DOWN` | Ancestors → Resource | Inherit defaults, allow overrides |
+| `UP` | Descendants → Resource | Aggregate values, collect metrics |
+| `MERGE_DOWN` | Ancestors → Resource | Deep-merge dictionaries |
+| `NONE` | Local only | Get only directly set values |
 
 ### DOWN - Inherit from Ancestors
 
@@ -88,17 +100,11 @@ config = get_value(prod, "config", PropagationMode.MERGE_DOWN)
 # {"db": {"host": "prod.db.internal", "port": 5432}}
 ```
 
-### NONE - Local Only
-
-Only return the value if set directly on the resource.
-
 ## Provenance
 
 The killer feature. Always know where a value came from:
 
 ```python
-from hrcp import get_value
-
 prov = get_value(resource, "timeout", PropagationMode.DOWN, with_provenance=True)
 prov.value        # The resolved value
 prov.source_path  # Path of the resource that provided it
@@ -128,10 +134,6 @@ tree.query_values("/platform/*/api", "port", PropagationMode.NONE)
 # JSON
 tree.to_json("config.json")
 tree = ResourceTree.from_json("config.json")
-
-# YAML
-tree.to_yaml("config.yaml")
-tree = ResourceTree.from_yaml_file("config.yaml")
 
 # Dict
 data = tree.to_dict()
@@ -173,6 +175,53 @@ tree = ResourceTree.from_dict(data)
     dark_mode: true   # beta users get dark mode
     /user-123         # inherits dark_mode=true
 ```
+
+## Documentation
+
+Full documentation at [hrcp.readthedocs.io](https://hrcp.readthedocs.io/), including:
+
+- [Quick Start Guide](https://hrcp.readthedocs.io/en/latest/getting-started/quickstart/)
+- [Propagation Modes](https://hrcp.readthedocs.io/en/latest/guide/propagation/)
+- [Provenance Tracking](https://hrcp.readthedocs.io/en/latest/guide/provenance/)
+- [API Reference](https://hrcp.readthedocs.io/en/latest/api/hrcp/)
+
+## Requirements
+
+- Python 3.11+
+- Zero dependencies
+
+## Development
+
+```bash
+# Clone the repository
+git clone https://github.com/keongalvin/hrcp.git
+cd hrcp
+
+# Install with dev dependencies
+uv sync
+
+# Run tests
+uv run pytest
+
+# Run linter
+uv run ruff check .
+
+# Build docs locally
+uv run mkdocs serve
+```
+
+## Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for your changes
+4. Ensure all tests pass (`uv run pytest`)
+5. Run the linter (`uv run ruff check .`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
 ## License
 
