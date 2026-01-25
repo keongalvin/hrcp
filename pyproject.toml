@@ -19,7 +19,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11"
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = []
 dynamic = ["version"]
@@ -40,6 +42,7 @@ dev = [
     "hypothesis>=6.0.0",
     "ruff>=0.1.0",
     "mypy>=1.5.0",
+    "tox>=4.0.0",
 ]
 docs = [
     "mkdocs>=1.6.0",
