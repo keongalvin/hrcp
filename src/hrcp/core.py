@@ -384,7 +384,7 @@ class ResourceTree:
             value = get_value(resource, key, mode)
             if mode == PropagationMode.UP:
                 # UP returns a list, extend if not empty
-                if value:
+                if value and isinstance(value, list):
                     results.extend(value)
             elif value is not None:
                 results.append(value)
