@@ -43,6 +43,8 @@ print(prov.mode)         # PropagationMode.DOWN
 | `value` | The resolved value |
 | `source_path` | Path of the resource that provided the value |
 | `mode` | The propagation mode used to resolve |
+| `key_sources` | For MERGE_DOWN with dict values, maps each key to the path that provided it (uses dot notation for nested keys) |
+| `contributing_paths` | For UP aggregation, lists all resource paths that contributed values |
 
 ## Provenance with Different Modes
 
@@ -84,8 +86,10 @@ tree.create("/company/eng", attributes={"budget": 100000})
 tree.create("/company/sales", attributes={"budget": 50000})
 
 prov = get_value(tree.root, "budget", PropagationMode.UP, with_provenance=True)
+
 print(prov.value)  # [100000, 50000]
-# source_path shows the aggregation point
+print(prov.source_path)  # "/company" (the aggregation point)
+print(prov.contributing_paths)  # ["/company/eng", "/company/sales"]
 ```
 
 ### MERGE_DOWN Propagation
@@ -109,7 +113,9 @@ prov = get_value(prod, "config", PropagationMode.MERGE_DOWN, with_provenance=Tru
 
 print(prov.value)
 # {"timeout": 60, "retries": 3}
-# timeout from /platform/prod, retries from /platform
+
+print(prov.key_sources)
+# {"timeout": "/platform/prod", "retries": "/platform"}
 ```
 
 ## Practical Examples
