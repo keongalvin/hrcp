@@ -45,6 +45,16 @@ lint path="":
 test path="." *args:
     uv run pytest {{ path }} {{ args }}
 
+# Run tox (all environments)
+[group('qa')]
+tox *args:
+    uv run tox {{ args }}
+
+# Run tox for specific Python version
+[group('qa')]
+tox-py version="311":
+    uv run tox -e py{{ version }}
+
 ## === PYTHON LIBRARY DEVELOPMENT ===
 
 # Verify if uv is installed
