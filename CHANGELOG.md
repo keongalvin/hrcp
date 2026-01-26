@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Python 3.14 support
 - CI workflow for tests, linting, and type checking on all PRs
-- Tox configuration for multi-Python version testing (3.11, 3.12, 3.13)
+- Dynamic Python version extraction in CI (follows attrs pattern via `hynek/build-and-inspect-python-package`)
+- Tox configuration for multi-Python version testing (3.11, 3.12, 3.13, 3.14)
 - `tox-uv` integration for faster virtual environment creation
 - Malformed data handling tests for serialization
 - Export `Resource` class from top-level `hrcp` module
