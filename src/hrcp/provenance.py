@@ -27,15 +27,15 @@ class Provenance:
     Attributes:
         value: The resolved configuration value.
         source_path: The path of the resource that provided the value.
-                     For DOWN/NONE, this is the single source.
-                     For UP, this is the root of the aggregation.
-                     For MERGE_DOWN, this is the deepest resource.
+                     For INHERIT/NONE, this is the single source.
+                     For AGGREGATE, this is the root of the aggregation.
+                     For MERGE, this is the deepest resource.
         mode: The propagation mode used to resolve the value.
-        key_sources: For MERGE_DOWN with dict values, maps each key
+        key_sources: For MERGE with dict values, maps each key
                      to the path of the resource that provided it.
                      Uses dot notation for nested keys (e.g., "logging.level").
-        contributing_paths: For UP aggregation, lists all resource paths
-                           that contributed values.
+        contributing_paths: For AGGREGATE/COLLECT_ANCESTORS, lists all resource
+                           paths that contributed values.
     """
 
     value: Any
@@ -61,8 +61,8 @@ def get_value(
         resource: The Resource to get the value for.
         key: The attribute key.
         mode: The propagation mode to use.
-        default: Default value if attribute not found (not used for UP mode
-                 or when with_provenance=True).
+        default: Default value if attribute not found (not used for AGGREGATE
+                 mode or when with_provenance=True).
         with_provenance: If True, return a Provenance object with source
                         tracking. If False, return just the value.
 
@@ -71,16 +71,20 @@ def get_value(
             or the default if not found.
         If with_provenance=True: Provenance object containing the value and
             its origin information, or None if value doesn't exist (except
-            for UP mode which returns Provenance with empty list).
+            for AGGREGATE mode which returns Provenance with empty list).
     """
     if mode == PropagationMode.NONE:
         prov = _provenance_none(resource, key)
-    elif mode == PropagationMode.DOWN:
-        prov = _provenance_down(resource, key)
-    elif mode == PropagationMode.UP:
-        prov = _provenance_up(resource, key)
-    elif mode == PropagationMode.MERGE_DOWN:
-        prov = _provenance_merge_down(resource, key)
+    elif mode == PropagationMode.INHERIT:
+        prov = _provenance_inherit(resource, key)
+    elif mode == PropagationMode.AGGREGATE:
+        prov = _provenance_aggregate(resource, key)
+    elif mode == PropagationMode.MERGE:
+        prov = _provenance_merge(resource, key)
+    elif mode == PropagationMode.REQUIRE_PATH:
+        prov = _provenance_require_path(resource, key)
+    elif mode == PropagationMode.COLLECT_ANCESTORS:
+        prov = _provenance_collect_ancestors(resource, key)
     else:
         msg = f"Unknown propagation mode: {mode}"
         raise ValueError(msg)
@@ -106,8 +110,8 @@ def _provenance_none(resource: Resource, key: str) -> Provenance | None:
     )
 
 
-def _provenance_down(resource: Resource, key: str) -> Provenance | None:
-    """Get provenance for DOWN mode - inheritance from ancestors."""
+def _provenance_inherit(resource: Resource, key: str) -> Provenance | None:
+    """Get provenance for INHERIT mode - inheritance from ancestors."""
     current: Resource | None = resource
     while current is not None:
         value = current.attributes.get(key)
@@ -115,15 +119,15 @@ def _provenance_down(resource: Resource, key: str) -> Provenance | None:
             return Provenance(
                 value=value,
                 source_path=current.path,
-                mode=PropagationMode.DOWN,
+                mode=PropagationMode.INHERIT,
             )
         current = current.parent
 
     return None
 
 
-def _provenance_up(resource: Resource, key: str) -> Provenance:
-    """Get provenance for UP mode - aggregation from descendants."""
+def _provenance_aggregate(resource: Resource, key: str) -> Provenance:
+    """Get provenance for AGGREGATE mode - aggregation from descendants."""
     values: list[Any] = []
     paths: list[str] = []
 
@@ -132,7 +136,62 @@ def _provenance_up(resource: Resource, key: str) -> Provenance:
     return Provenance(
         value=values,
         source_path=resource.path,
-        mode=PropagationMode.UP,
+        mode=PropagationMode.AGGREGATE,
+        contributing_paths=paths,
+    )
+
+
+def _provenance_require_path(resource: Resource, key: str) -> Provenance | None:
+    """Get provenance for REQUIRE_PATH mode - all ancestors must have truthy value.
+
+    Returns the local value only if ALL nodes from self to root have the
+    attribute set to a truthy value. Otherwise returns None.
+    """
+    # First check if local value exists and is truthy
+    local_value = resource.attributes.get(key)
+    if not local_value:
+        return None
+
+    # Walk up to root, checking each ancestor
+    paths: list[str] = [resource.path]
+    current: Resource | None = resource.parent
+    while current is not None:
+        value = current.attributes.get(key)
+        if not value:
+            return None
+        paths.append(current.path)
+        current = current.parent
+
+    # All ancestors have truthy values
+    return Provenance(
+        value=local_value,
+        source_path=resource.path,
+        mode=PropagationMode.REQUIRE_PATH,
+        contributing_paths=list(reversed(paths)),  # Root to leaf order
+    )
+
+
+def _provenance_collect_ancestors(resource: Resource, key: str) -> Provenance:
+    """Get provenance for COLLECT_ANCESTORS mode - collect values from self to root.
+
+    Returns a list of all values found from the resource up to the root.
+    Useful for custom AND/OR logic across the ancestor path.
+    """
+    values: list[Any] = []
+    paths: list[str] = []
+
+    current: Resource | None = resource
+    while current is not None:
+        value = current.attributes.get(key)
+        if value is not None:
+            values.append(value)
+            paths.append(current.path)
+        current = current.parent
+
+    return Provenance(
+        value=values,
+        source_path=resource.path,
+        mode=PropagationMode.COLLECT_ANCESTORS,
         contributing_paths=paths,
     )
 
@@ -153,8 +212,8 @@ def _collect_values_with_paths(
         _collect_values_with_paths(child, key, values, paths)
 
 
-def _provenance_merge_down(resource: Resource, key: str) -> Provenance | None:
-    """Get provenance for MERGE_DOWN mode - deep merge with key tracking."""
+def _provenance_merge(resource: Resource, key: str) -> Provenance | None:
+    """Get provenance for MERGE mode - deep merge with key tracking."""
     # Collect all values and their sources from root to leaf
     chain: list[tuple[Any, str]] = []  # (value, path)
     current: Resource | None = resource
@@ -174,12 +233,12 @@ def _provenance_merge_down(resource: Resource, key: str) -> Provenance | None:
     all_dicts = all(isinstance(v, dict) for v, _ in chain)
 
     if not all_dicts:
-        # Non-dict: use DOWN behavior (last value wins)
+        # Non-dict: use INHERIT behavior (last value wins)
         value, path = chain[-1]
         return Provenance(
             value=value,
             source_path=path,
-            mode=PropagationMode.MERGE_DOWN,
+            mode=PropagationMode.MERGE,
         )
 
     # Deep merge with key tracking
@@ -192,7 +251,7 @@ def _provenance_merge_down(resource: Resource, key: str) -> Provenance | None:
     return Provenance(
         value=result,
         source_path=resource.path,
-        mode=PropagationMode.MERGE_DOWN,
+        mode=PropagationMode.MERGE,
         key_sources=key_sources,
     )
 

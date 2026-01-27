@@ -28,9 +28,17 @@ class TestPropagationModeEnum:
     def test_propagation_modes_exist(self):
         """All expected propagation modes are defined."""
         assert PropagationMode.NONE is not None
-        assert PropagationMode.DOWN is not None
-        assert PropagationMode.UP is not None
-        assert PropagationMode.MERGE_DOWN is not None
+        assert PropagationMode.INHERIT is not None
+        assert PropagationMode.AGGREGATE is not None
+        assert PropagationMode.MERGE is not None
+        assert PropagationMode.REQUIRE_PATH is not None
+        assert PropagationMode.COLLECT_ANCESTORS is not None
+
+    def test_backward_compatibility_aliases(self):
+        """Deprecated aliases still work for backward compatibility."""
+        assert PropagationMode.DOWN is PropagationMode.INHERIT
+        assert PropagationMode.UP is PropagationMode.AGGREGATE
+        assert PropagationMode.MERGE_DOWN is PropagationMode.MERGE
 
 
 class TestPropagationDown:
@@ -359,6 +367,173 @@ class TestPropagationNone:
         assert result == default
 
 
+class TestPropagationRequirePath:
+    """Test REQUIRE_PATH propagation - all ancestors must have truthy value."""
+
+    def test_require_path_all_truthy(self):
+        """Returns value when all ancestors have truthy values."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account", attributes={"enabled": True})
+
+        result = get_value(account, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is True
+
+    def test_require_path_local_missing(self):
+        """Returns None if local value is missing."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account")  # No enabled attribute
+
+        result = get_value(account, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+    def test_require_path_local_falsy(self):
+        """Returns None if local value is falsy."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account", attributes={"enabled": False})
+
+        result = get_value(account, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+    def test_require_path_ancestor_missing(self):
+        """Returns None if any ancestor is missing the value."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team")  # No enabled attribute
+        account = tree.create("/org/team/account", attributes={"enabled": True})
+
+        result = get_value(account, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+    def test_require_path_ancestor_falsy(self):
+        """Returns None if any ancestor has falsy value."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", False)  # Falsy at root
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account", attributes={"enabled": True})
+
+        result = get_value(account, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+    def test_require_path_root_only(self):
+        """Works correctly when resource is root."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+
+        result = get_value(tree.root, "enabled", PropagationMode.REQUIRE_PATH)
+
+        assert result is True
+
+    def test_require_path_provenance(self):
+        """Provenance tracks all contributing paths."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account", attributes={"enabled": True})
+
+        prov = get_value(
+            account, "enabled", PropagationMode.REQUIRE_PATH, with_provenance=True
+        )
+
+        assert prov is not None
+        assert prov.value is True
+        assert prov.source_path == "/org/team/account"
+        assert prov.contributing_paths == ["/org", "/org/team", "/org/team/account"]
+
+
+class TestPropagationCollectAncestors:
+    """Test COLLECT_ANCESTORS propagation - collect values from self to root."""
+
+    def test_collect_ancestors_all_present(self):
+        """Collects all values from self to root."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("level", "org")
+        tree.create("/org/team", attributes={"level": "team"})
+        account = tree.create("/org/team/account", attributes={"level": "account"})
+
+        result = get_value(account, "level", PropagationMode.COLLECT_ANCESTORS)
+
+        # Values collected from account up to root
+        assert result == ["account", "team", "org"]
+
+    def test_collect_ancestors_some_missing(self):
+        """Skips nodes without the attribute."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("level", "org")
+        tree.create("/org/team")  # No level attribute
+        account = tree.create("/org/team/account", attributes={"level": "account"})
+
+        result = get_value(account, "level", PropagationMode.COLLECT_ANCESTORS)
+
+        assert result == ["account", "org"]
+
+    def test_collect_ancestors_none_present(self):
+        """Returns empty list if no ancestor has the value."""
+        tree = ResourceTree(root_name="org")
+        tree.create("/org/team")
+        account = tree.create("/org/team/account")
+
+        result = get_value(account, "level", PropagationMode.COLLECT_ANCESTORS)
+
+        assert result == []
+
+    def test_collect_ancestors_root_only(self):
+        """Works correctly when resource is root."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("level", "org")
+
+        result = get_value(tree.root, "level", PropagationMode.COLLECT_ANCESTORS)
+
+        assert result == ["org"]
+
+    def test_collect_ancestors_for_all_check(self):
+        """Can be used with all() for REQUIRE_PATH-like behavior."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": True})
+        account = tree.create("/org/team/account", attributes={"enabled": True})
+
+        values = get_value(account, "enabled", PropagationMode.COLLECT_ANCESTORS)
+
+        assert all(values) is True
+
+    def test_collect_ancestors_for_any_check(self):
+        """Can be used with any() for inheritance-like behavior."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("enabled", True)
+        tree.create("/org/team", attributes={"enabled": False})
+        account = tree.create("/org/team/account", attributes={"enabled": False})
+
+        values = get_value(account, "enabled", PropagationMode.COLLECT_ANCESTORS)
+
+        assert any(values) is True
+
+    def test_collect_ancestors_provenance(self):
+        """Provenance tracks all contributing paths."""
+        tree = ResourceTree(root_name="org")
+        tree.root.set_attribute("level", "org")
+        tree.create("/org/team", attributes={"level": "team"})
+        account = tree.create("/org/team/account", attributes={"level": "account"})
+
+        prov = get_value(
+            account, "level", PropagationMode.COLLECT_ANCESTORS, with_provenance=True
+        )
+
+        assert prov.value == ["account", "team", "org"]
+        assert prov.source_path == "/org/team/account"
+        assert prov.contributing_paths == ["/org/team/account", "/org/team", "/org"]
+
+
 class TestGetValueCombined:
     """Test the combined get_value function with optional provenance."""
 
@@ -373,7 +548,7 @@ class TestGetValueCombined:
         tree.root.set_attribute(key, value)
         child = tree.create(f"/{root_name}/{child_name}")
 
-        result = get_value(child, key, PropagationMode.DOWN)
+        result = get_value(child, key, PropagationMode.INHERIT)
 
         assert result == value
 

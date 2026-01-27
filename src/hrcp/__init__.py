@@ -1,9 +1,11 @@
 """HRCP - Hierarchical Resource Configuration with Provenance.
 
 A Python library for managing hierarchical configuration with:
-- Inheritance: Config values propagate DOWN from ancestors
-- Aggregation: Values aggregate UP from descendants
-- Merge: Deep merge of dicts through hierarchy
+- INHERIT: Config values propagate from ancestors to descendants
+- AGGREGATE: Values are collected from descendants
+- MERGE: Deep merge of dicts through hierarchy
+- REQUIRE_PATH: All ancestors must have truthy values
+- COLLECT_ANCESTORS: Collect all values from self to root
 - Provenance: Track where every value came from
 """
 
