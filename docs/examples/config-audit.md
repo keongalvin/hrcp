@@ -24,7 +24,7 @@ def audit_report(tree, attrs):
 
         for attr in attrs:
             prov = get_value(resource, attr, PropagationMode.INHERIT, with_provenance=True)
-            if prov.value is not None:
+            if prov is not None:
                 source = "(local)" if prov.source_path == resource.path else f"(from {prov.source_path})"
                 print(f"  {attr}: {prov.value} {source}")
             else:

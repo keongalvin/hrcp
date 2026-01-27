@@ -45,6 +45,7 @@ dev = [
     "mypy>=1.5.0",
     "tox>=4.0.0",
     "tox-uv>=1.0.0",
+    "mktestdocs>=0.2.5",
 ]
 docs = [
     "mkdocs>=1.6.0",

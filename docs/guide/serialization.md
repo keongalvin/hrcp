@@ -7,21 +7,23 @@ HRCP supports saving and loading resource trees via JSON and Python dicts.
 ### Save to JSON
 
 ```python
-from hrcp import ResourceTree
+import tempfile
+import os
 
 tree = ResourceTree(root_name="platform")
 tree.root.set_attribute("env", "prod")
 tree.create("/platform/api", attributes={"port": 8080})
 
 # Save to file
-tree.to_json("config.json")
-```
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    config_path = f.name
+tree.to_json(config_path)
 
-### Load from JSON
-
-```python
 # Load from file
-tree = ResourceTree.from_json("config.json")
+tree = ResourceTree.from_json(config_path)
+
+# Clean up
+os.unlink(config_path)
 ```
 
 ## Dictionary
@@ -31,6 +33,10 @@ For programmatic manipulation or integration with other systems.
 ### Convert to Dict
 
 ```python
+tree = ResourceTree(root_name="platform")
+tree.root.set_attribute("env", "prod")
+tree.create("/platform/api", attributes={"port": 8080})
+
 data = tree.to_dict()
 
 # data is a regular Python dict
@@ -70,6 +76,8 @@ The dictionary format used by `to_dict()` and `from_dict()` follows this schema:
 ### Schema Definition
 
 ```python
+from typing import Any, TypedDict
+
 # Type definition for reference
 ResourceDict = TypedDict('ResourceDict', {
     'name': str,                          # Required: resource identifier

@@ -70,6 +70,10 @@ print(prov.source_path)  # "/org/team" - closest ancestor with value
 Shows if the value is set locally:
 
 ```python
+tree = ResourceTree(root_name="org")
+tree.create("/org/team")
+project = tree.create("/org/team/project")
+
 # When attribute IS set locally
 project.set_attribute("env", "staging")
 prov = get_value(project, "env", PropagationMode.NONE, with_provenance=True)
@@ -140,6 +144,10 @@ print(prov.key_sources)
 When a service has unexpected configuration:
 
 ```python
+tree = ResourceTree(root_name="platform")
+tree.root.set_attribute("timeout", 30)
+api_resource = tree.create("/platform/us-east/api", attributes={"timeout": 60})
+
 def debug_config(resource, attr):
     """Print where a config value comes from."""
     for mode in [PropagationMode.NONE, PropagationMode.INHERIT]:
@@ -154,7 +162,7 @@ def debug_config(resource, attr):
 debug_config(api_resource, "timeout")
 # timeout = 60
 #   Source: /platform/us-east/api
-#   Mode: DOWN
+#   Mode: NONE
 ```
 
 ### Auditing Configuration Sources
@@ -162,6 +170,11 @@ debug_config(api_resource, "timeout")
 Generate a report of where all configuration comes from:
 
 ```python
+tree = ResourceTree(root_name="platform")
+tree.root.set_attribute("env", "prod")
+tree.create("/platform/us-east", attributes={"region": "us-east-1"})
+api = tree.create("/platform/us-east/api", attributes={"timeout": 60})
+
 def audit_resource(resource, attributes):
     """Audit configuration sources for a resource."""
     print(f"\nConfiguration audit for {resource.path}")

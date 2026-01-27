@@ -67,18 +67,17 @@ HRCP provides built-in support for:
 Since `to_dict()` returns a standard Python dict, you can easily serialize to any format:
 
 ```python
-# YAML (requires pyyaml)
-import yaml
-data = tree.to_dict()
-with open("config.yaml", "w") as f:
-    yaml.dump(data, f)
+# YAML example (requires: pip install pyyaml)
+def save_as_yaml(tree, path):
+    import yaml
+    with open(path, "w") as f:
+        yaml.dump(tree.to_dict(), f)
 
-# TOML (requires tomli-w for writing, tomllib for reading in 3.11+)
-import tomllib
-import tomli_w
-data = tree.to_dict()
-with open("config.toml", "wb") as f:
-    tomli_w.dump(data, f)
+# TOML example (requires: pip install tomli-w)
+def save_as_toml(tree, path):
+    import tomli_w
+    with open(path, "wb") as f:
+        tomli_w.dump(tree.to_dict(), f)
 ```
 
 ## Next Steps

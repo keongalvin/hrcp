@@ -16,6 +16,10 @@ These are trivial—we don't include them because they're one-liners.
 ### Search & Filter
 
 ```python
+tree = ResourceTree(root_name="root")
+tree.create("/root/prod", attributes={"env": "prod", "critical": True, "enabled": True})
+tree.create("/root/staging", attributes={"env": "staging", "enabled": True})
+
 # find by attribute
 [r for r in tree.walk() if r.attributes.get("env") == "prod"]
 
@@ -36,6 +40,12 @@ def depth(r): return 1 if not r.children else 1 + max(depth(c) for c in r.childr
 ### Tree Operations
 
 ```python
+tree = ResourceTree(root_name="root")
+tree.create("/root/src", attributes={"key": "value"})
+source = ResourceTree(root_name="root")
+source.create("/root/item", attributes={"a": 1})
+target = ResourceTree(root_name="root")
+
 # clone tree
 cloned = ResourceTree.from_dict(tree.to_dict())
 
@@ -46,12 +56,12 @@ for r in source.walk():
         target_r.set_attribute(k, v)
 
 # copy resource
-data = tree.get(src).attributes.copy()
-tree.create(dest, attributes=data)
+data = tree.get("/root/src").attributes.copy()
+tree.create("/root/dest", attributes=data)
 
-# move resource
-tree.create(dest, attributes=tree.get(src).attributes.copy())
-tree.delete(src)
+# move resource (to new location)
+tree.create("/root/moved", attributes=tree.get("/root/src").attributes.copy())
+tree.delete("/root/src")
 ```
 
 ## Out of Scope
@@ -89,8 +99,9 @@ HRCP is **not thread-safe** by design. This is intentional:
 ### Single-Threaded Usage (Recommended)
 
 ```python
-# Load config at startup
-tree = ResourceTree.from_json("config.json")
+tree = ResourceTree(root_name="app")
+tree.root.set_attribute("timeout", 30)
+resource = tree.create("/app/service")
 
 # Use throughout application (read-only)
 timeout = get_value(resource, "timeout", PropagationMode.INHERIT)
@@ -104,7 +115,8 @@ If you need concurrent access:
 import threading
 
 # Option 1: Read-only after initialization (safe)
-tree = ResourceTree.from_json("config.json")
+tree = ResourceTree(root_name="app")
+tree.create("/app/service", attributes={"timeout": 30})
 # Multiple threads can safely read from tree
 
 # Option 2: Lock for modifications
@@ -129,10 +141,15 @@ HRCP operations are synchronous. For async applications:
 ```python
 import asyncio
 
+def create_tree():
+    tree = ResourceTree(root_name="app")
+    tree.root.set_attribute("timeout", 30)
+    return tree
+
 async def load_config():
     # Run synchronous code in executor
     loop = asyncio.get_event_loop()
-    tree = await loop.run_in_executor(None, ResourceTree.from_json, "config.json")
+    tree = await loop.run_in_executor(None, create_tree)
     return tree
 ```
 

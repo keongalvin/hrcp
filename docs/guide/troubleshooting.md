@@ -12,7 +12,10 @@ Common issues and their solutions when working with HRCP.
 tree = ResourceTree(root_name="platform")
 
 # This will fail
-tree.create("/wrong/path")  # ValueError: Path must start with '/platform'
+try:
+    tree.create("/wrong/path")
+except ValueError as e:
+    print(e)  # Path must start with '/platform'
 
 # This works
 tree.create("/platform/path")
@@ -29,7 +32,11 @@ tree.create("/platform/path")
 ```python
 tree = ResourceTree(root_name="org")
 tree.create("/org/team")
-tree.create("/org/team")  # ValueError: Resource already exists at '/org/team'
+
+try:
+    tree.create("/org/team")
+except ValueError as e:
+    print(e)  # Resource already exists at '/org/team'
 ```
 
 **Solution**: Check if the resource exists before creating, or use `get()` to retrieve the existing one:
@@ -49,7 +56,10 @@ else:
 **Cause**: Resource names cannot contain path separators.
 
 ```python
-Resource(name="my/resource")  # ValueError: name cannot contain '/'
+try:
+    Resource(name="my/resource")
+except ValueError as e:
+    print(e)  # name cannot contain '/'
 ```
 
 **Solution**: Use paths for hierarchy, not slashes in names:
@@ -169,11 +179,13 @@ else:
 **Cause**: `key_sources` only tracks top-level keys in the merged dict.
 
 ```python
+tree = ResourceTree(root_name="org")
 tree.root.set_attribute("config", {"db": {"host": "localhost", "port": 5432}})
-tree.create("/org/prod", attributes={"config": {"db": {"host": "prod.db"}}})
+prod = tree.create("/org/prod", attributes={"config": {"db": {"host": "prod.db"}}})
 
 prov = get_value(prod, "config", PropagationMode.MERGE, with_provenance=True)
-# prov.key_sources tracks "db" but not "db.host" or "db.port"
+# prov.key_sources tracks "db.host" and "db.port" with dot notation
+print(prov.key_sources)  # {'db.host': '/org/prod', 'db.port': '/org'}
 ```
 
 **Solution**: For nested key tracking, check `key_sources` which uses dot notation for nested keys (e.g., `"db.host"`).
@@ -188,7 +200,11 @@ prov = get_value(prod, "config", PropagationMode.MERGE, with_provenance=True)
 
 ```python
 data = {"name": "root"}  # Missing 'attributes' and 'children'
-tree = ResourceTree.from_dict(data)  # TypeError
+
+try:
+    tree = ResourceTree.from_dict(data)
+except TypeError as e:
+    print(e)  # Missing required keys
 ```
 
 **Solution**: Ensure all required fields are present:
@@ -208,8 +224,10 @@ data = {
 **Cause**: File path issues or invalid JSON.
 
 ```python
-tree = ResourceTree.from_json("config.json")
-# FileNotFoundError or json.JSONDecodeError
+try:
+    tree = ResourceTree.from_json("nonexistent.json")
+except FileNotFoundError as e:
+    print("File not found")
 ```
 
 **Solution**:
@@ -307,6 +325,9 @@ print_tree(tree)
 def trace_value(resource, key, mode):
     """Show where a value comes from."""
     prov = get_value(resource, key, mode, with_provenance=True)
+    if prov is None:
+        print(f"Query: {resource.path}.{key} - not found")
+        return
 
     print(f"Query: {resource.path}.{key} with {mode.name}")
     print(f"Value: {prov.value}")
@@ -317,6 +338,10 @@ def trace_value(resource, key, mode):
     if prov.key_sources:
         print(f"Key sources: {prov.key_sources}")
 
+# Example usage
+tree = ResourceTree(root_name="org")
+tree.root.set_attribute("config", {"timeout": 30})
+my_resource = tree.create("/org/team")
 trace_value(my_resource, "config", PropagationMode.MERGE)
 ```
 
@@ -339,7 +364,12 @@ def validate_tree(tree):
 
     return issues
 
+# Example usage
+tree = ResourceTree(root_name="org")
+tree.create("/org/team")
 issues = validate_tree(tree)
 if issues:
     print("Issues found:", issues)
+else:
+    print("No issues found")
 ```

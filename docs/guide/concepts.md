@@ -25,6 +25,8 @@ A **Resource** is a node in the tree. Each resource has:
 - A **parent** (except for the root)
 
 ```python
+tree = ResourceTree(root_name="platform")
+
 # Create a resource
 tree.create("/platform/us-east/api")
 
@@ -35,7 +37,7 @@ api = tree.get("/platform/us-east/api")
 print(api.name)      # "api"
 print(api.path)      # "/platform/us-east/api"
 print(api.parent)    # Resource at /platform/us-east
-print(api.children)  # []
+print(api.children)  # {}
 ```
 
 ## Paths
@@ -59,6 +61,7 @@ tree = ResourceTree(root_name="org")
 !!! tip "Automatic Parent Creation"
     When you create a resource, HRCP automatically creates any missing parent resources:
     ```python
+    tree = ResourceTree(root_name="org")
     tree.create("/org/team/project/env")
     # Also creates /org/team and /org/team/project if they don't exist
     ```
@@ -68,7 +71,8 @@ tree = ResourceTree(root_name="org")
 Attributes are the configuration values stored on resources:
 
 ```python
-resource = tree.get("/org/team")
+tree = ResourceTree(root_name="org")
+resource = tree.create("/org/team")
 
 # Set attributes
 resource.set_attribute("budget", 50000)
@@ -89,15 +93,19 @@ Attributes can be any JSON-serializable value: strings, numbers, booleans, lists
 See [Propagation Modes](propagation.md) for details.
 
 ```python
-from hrcp import PropagationMode, get_value
+tree = ResourceTree(root_name="org")
+tree.root.set_attribute("timeout", 30)
+tree.root.set_attribute("config", {"debug": False})
+resource = tree.create("/org/team", attributes={"headcount": 10, "name": "alpha"})
+tree.create("/org/team/subteam", attributes={"headcount": 5})
 
-# DOWN: Inherit from ancestors
+# INHERIT: Inherit from ancestors
 value = get_value(resource, "timeout", PropagationMode.INHERIT)
 
-# UP: Aggregate from descendants
+# AGGREGATE: Aggregate from descendants
 values = get_value(resource, "headcount", PropagationMode.AGGREGATE)
 
-# MERGE_DOWN: Deep-merge dicts from ancestors
+# MERGE: Deep-merge dicts from ancestors
 config = get_value(resource, "config", PropagationMode.MERGE)
 
 # NONE: Local value only
@@ -111,6 +119,10 @@ local = get_value(resource, "name", PropagationMode.NONE)
 See [Provenance](provenance.md) for details.
 
 ```python
+tree = ResourceTree(root_name="org")
+tree.root.set_attribute("timeout", 30)
+resource = tree.create("/org/team")
+
 prov = get_value(resource, "timeout", PropagationMode.INHERIT, with_provenance=True)
 print(prov.value)        # The resolved value
 print(prov.source_path)  # Which resource provided it
