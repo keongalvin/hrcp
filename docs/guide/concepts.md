@@ -92,13 +92,13 @@ See [Propagation Modes](propagation.md) for details.
 from hrcp import PropagationMode, get_value
 
 # DOWN: Inherit from ancestors
-value = get_value(resource, "timeout", PropagationMode.DOWN)
+value = get_value(resource, "timeout", PropagationMode.INHERIT)
 
-# UP: Aggregate from descendants  
-values = get_value(resource, "headcount", PropagationMode.UP)
+# UP: Aggregate from descendants
+values = get_value(resource, "headcount", PropagationMode.AGGREGATE)
 
 # MERGE_DOWN: Deep-merge dicts from ancestors
-config = get_value(resource, "config", PropagationMode.MERGE_DOWN)
+config = get_value(resource, "config", PropagationMode.MERGE)
 
 # NONE: Local value only
 local = get_value(resource, "name", PropagationMode.NONE)
@@ -111,7 +111,7 @@ local = get_value(resource, "name", PropagationMode.NONE)
 See [Provenance](provenance.md) for details.
 
 ```python
-prov = get_value(resource, "timeout", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(resource, "timeout", PropagationMode.INHERIT, with_provenance=True)
 print(prov.value)        # The resolved value
 print(prov.source_path)  # Which resource provided it
 print(prov.mode)         # Which propagation mode was used
@@ -138,14 +138,14 @@ tree.create("/company/engineering/api")
 # 4. Query with propagation
 api = tree.get("/company/engineering/api")
 
-env = get_value(api, "env", PropagationMode.DOWN)
+env = get_value(api, "env", PropagationMode.INHERIT)
 # "production" - inherited from root
 
-log_level = get_value(api, "log_level", PropagationMode.DOWN)
+log_level = get_value(api, "log_level", PropagationMode.INHERIT)
 # "DEBUG" - inherited from /company/engineering (closest ancestor)
 
 # 5. Track provenance
-prov = get_value(api, "log_level", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(api, "log_level", PropagationMode.INHERIT, with_provenance=True)
 print(f"{prov.value} from {prov.source_path}")
 # "DEBUG from /company/engineering"
 ```

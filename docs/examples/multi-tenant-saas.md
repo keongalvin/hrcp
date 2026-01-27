@@ -42,13 +42,13 @@ tree.create("/platform/small-startup/app")
 # Query configuration
 analytics = tree.get("/platform/acme-corp/analytics")
 
-timeout = get_value(analytics, "timeout", PropagationMode.DOWN)
+timeout = get_value(analytics, "timeout", PropagationMode.INHERIT)
 # 120 (local override)
 
-rate_limit = get_value(analytics, "max_requests_per_minute", PropagationMode.DOWN)
+rate_limit = get_value(analytics, "max_requests_per_minute", PropagationMode.INHERIT)
 # 10000 (from tenant)
 
-features = get_value(analytics, "features", PropagationMode.MERGE_DOWN)
+features = get_value(analytics, "features", PropagationMode.MERGE)
 # {"dark_mode": False, "beta_features": False, "ai_assist": True}
 # ai_assist merged from tenant, others from platform
 ```

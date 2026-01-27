@@ -60,7 +60,7 @@ from hrcp import get_value, PropagationMode
 db = tree.get("/platform/us-east/db")
 
 # Get inherited value (flows DOWN from ancestors)
-timeout = get_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.INHERIT)
 print(timeout)  # 30 - inherited from root
 ```
 
@@ -69,10 +69,10 @@ print(timeout)  # 30 - inherited from root
 Know exactly where values come from:
 
 ```python
-prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(db, "timeout", PropagationMode.INHERIT, with_provenance=True)
 print(f"Value: {prov.value}")           # 30
 print(f"Source: {prov.source_path}")    # /platform
-print(f"Mode: {prov.mode}")             # PropagationMode.DOWN
+print(f"Mode: {prov.mode}")             # PropagationMode.INHERIT
 ```
 
 ## Complete Example
@@ -98,14 +98,14 @@ port = get_value(api, "port", PropagationMode.NONE)
 print(f"Port: {port}")  # 8080
 
 # Inherited values
-tier = get_value(api, "tier", PropagationMode.DOWN)
+tier = get_value(api, "tier", PropagationMode.INHERIT)
 print(f"Tier: {tier}")  # premium (from /org/engineering)
 
-budget = get_value(api, "budget_code", PropagationMode.DOWN)
+budget = get_value(api, "budget_code", PropagationMode.INHERIT)
 print(f"Budget: {budget}")  # CORP-001 (from root)
 
 # Provenance
-prov = get_value(api, "tier", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(api, "tier", PropagationMode.INHERIT, with_provenance=True)
 print(f"Tier '{prov.value}' comes from {prov.source_path}")
 # Tier 'premium' comes from /org/engineering
 ```

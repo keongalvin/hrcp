@@ -51,12 +51,12 @@ def get_server_config(tree, server_path):
     """Get full server configuration."""
     server = tree.get(server_path)
     return {
-        "version": get_value(server, "version", PropagationMode.DOWN),
-        "tick_rate": get_value(server, "tick_rate", PropagationMode.DOWN),
-        "max_players": get_value(server, "max_players", PropagationMode.DOWN),
-        "latency_target": get_value(server, "latency_target", PropagationMode.DOWN),
-        "anti_cheat": get_value(server, "anti_cheat", PropagationMode.MERGE_DOWN),
-        "matchmaking": get_value(server, "matchmaking", PropagationMode.MERGE_DOWN),
+        "version": get_value(server, "version", PropagationMode.INHERIT),
+        "tick_rate": get_value(server, "tick_rate", PropagationMode.INHERIT),
+        "max_players": get_value(server, "max_players", PropagationMode.INHERIT),
+        "latency_target": get_value(server, "latency_target", PropagationMode.INHERIT),
+        "anti_cheat": get_value(server, "anti_cheat", PropagationMode.MERGE),
+        "matchmaking": get_value(server, "matchmaking", PropagationMode.MERGE),
     }
 
 # Compare ranked vs casual in NA-East

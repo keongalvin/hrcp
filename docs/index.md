@@ -55,11 +55,11 @@ tree.create("/platform/us-east/db")
 
 # Inheritance: values flow DOWN
 api = tree.get("/platform/us-east/api")
-timeout = get_value(api, "timeout", PropagationMode.DOWN)
+timeout = get_value(api, "timeout", PropagationMode.INHERIT)
 # timeout == 60 (local override)
 
 db = tree.get("/platform/us-east/db")
-timeout = get_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.INHERIT)
 # timeout == 30 (inherited from root)
 ```
 

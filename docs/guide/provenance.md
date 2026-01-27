@@ -27,11 +27,11 @@ tree.create("/platform/us-east/db")
 
 # Get value with provenance
 db = tree.get("/platform/us-east/db")
-prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(db, "timeout", PropagationMode.INHERIT, with_provenance=True)
 
 print(prov.value)        # 30
 print(prov.source_path)  # "/platform"
-print(prov.mode)         # PropagationMode.DOWN
+print(prov.mode)         # PropagationMode.INHERIT
 ```
 
 ## The Provenance Object
@@ -59,7 +59,7 @@ tree.create("/org/team", attributes={"env": "staging"})
 tree.create("/org/team/project")
 
 project = tree.get("/org/team/project")
-prov = get_value(project, "env", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(project, "env", PropagationMode.INHERIT, with_provenance=True)
 
 print(prov.value)        # "staging"
 print(prov.source_path)  # "/org/team" - closest ancestor with value
@@ -97,7 +97,7 @@ tree = ResourceTree(root_name="company")
 tree.create("/company/eng", attributes={"budget": 100000})
 tree.create("/company/sales", attributes={"budget": 50000})
 
-prov = get_value(tree.root, "budget", PropagationMode.UP, with_provenance=True)
+prov = get_value(tree.root, "budget", PropagationMode.AGGREGATE, with_provenance=True)
 
 print(prov.value)  # [100000, 50000]
 print(prov.source_path)  # "/company" (the aggregation point - where you queried)
@@ -124,7 +124,7 @@ tree.create("/platform/prod", attributes={
 })
 
 prod = tree.get("/platform/prod")
-prov = get_value(prod, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
+prov = get_value(prod, "config", PropagationMode.MERGE, with_provenance=True)
 
 print(prov.value)
 # {"timeout": 60, "retries": 3}
@@ -142,7 +142,7 @@ When a service has unexpected configuration:
 ```python
 def debug_config(resource, attr):
     """Print where a config value comes from."""
-    for mode in [PropagationMode.NONE, PropagationMode.DOWN]:
+    for mode in [PropagationMode.NONE, PropagationMode.INHERIT]:
         prov = get_value(resource, attr, mode, with_provenance=True)
         if prov and prov.value is not None:
             print(f"{attr} = {prov.value}")
@@ -168,7 +168,7 @@ def audit_resource(resource, attributes):
     print("-" * 50)
 
     for attr in attributes:
-        prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
+        prov = get_value(resource, attr, PropagationMode.INHERIT, with_provenance=True)
         if prov and prov.value is not None:
             local = "(local)" if prov.source_path == resource.path else "(inherited)"
             print(f"  {attr}: {prov.value} {local}")
@@ -198,8 +198,8 @@ def config_diff(resource1, resource2, attributes):
     print(f"Comparing {resource1.path} vs {resource2.path}\n")
 
     for attr in attributes:
-        p1 = get_value(resource1, attr, PropagationMode.DOWN, with_provenance=True)
-        p2 = get_value(resource2, attr, PropagationMode.DOWN, with_provenance=True)
+        p1 = get_value(resource1, attr, PropagationMode.INHERIT, with_provenance=True)
+        p2 = get_value(resource2, attr, PropagationMode.INHERIT, with_provenance=True)
 
         v1 = p1.value if p1 else None
         v2 = p2.value if p2 else None

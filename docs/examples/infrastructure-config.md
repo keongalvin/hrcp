@@ -50,7 +50,7 @@ tree.create("/infra/staging/api", attributes={
 
 # Query with provenance
 api = tree.get("/infra/prod/api")
-prov = get_value(api, "instance_type", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(api, "instance_type", PropagationMode.INHERIT, with_provenance=True)
 print(f"Instance type: {prov.value} (from {prov.source_path})")
 # Instance type: t3.large (from /infra/prod)
 ```

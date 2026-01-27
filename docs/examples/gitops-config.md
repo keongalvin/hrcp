@@ -45,9 +45,9 @@ def generate_manifest(tree, app, env):
     return {
         "app": app,
         "environment": env,
-        "replicas": get_value(resource, "replicas", PropagationMode.DOWN),
-        "image_policy": get_value(resource, "image_policy", PropagationMode.DOWN),
-        "resources": get_value(resource, "resources", PropagationMode.MERGE_DOWN),
+        "replicas": get_value(resource, "replicas", PropagationMode.INHERIT),
+        "image_policy": get_value(resource, "image_policy", PropagationMode.INHERIT),
+        "resources": get_value(resource, "resources", PropagationMode.MERGE),
     }
 
 # Generate manifests

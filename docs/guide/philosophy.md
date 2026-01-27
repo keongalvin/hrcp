@@ -93,7 +93,7 @@ HRCP is **not thread-safe** by design. This is intentional:
 tree = ResourceTree.from_json("config.json")
 
 # Use throughout application (read-only)
-timeout = get_value(resource, "timeout", PropagationMode.DOWN)
+timeout = get_value(resource, "timeout", PropagationMode.INHERIT)
 ```
 
 ### Multi-Threaded Usage

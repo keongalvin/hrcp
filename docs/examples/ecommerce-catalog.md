@@ -41,11 +41,11 @@ def get_product_policies(tree, category_path):
     """Get all policies applicable to a product category."""
     category = tree.get(category_path)
     return {
-        "currency": get_value(category, "currency", PropagationMode.DOWN),
-        "tax_rate": get_value(category, "tax_rate", PropagationMode.DOWN),
-        "shipping": get_value(category, "shipping", PropagationMode.MERGE_DOWN),
-        "warranty": get_value(category, "warranty", PropagationMode.MERGE_DOWN),
-        "return_policy": get_value(category, "return_policy", PropagationMode.MERGE_DOWN),
+        "currency": get_value(category, "currency", PropagationMode.INHERIT),
+        "tax_rate": get_value(category, "tax_rate", PropagationMode.INHERIT),
+        "shipping": get_value(category, "shipping", PropagationMode.MERGE),
+        "warranty": get_value(category, "warranty", PropagationMode.MERGE),
+        "return_policy": get_value(category, "return_policy", PropagationMode.MERGE),
     }
 
 # Compare policies

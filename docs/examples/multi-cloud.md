@@ -50,11 +50,11 @@ def get_infra_config(tree, path):
     """Get full infrastructure configuration with merged tags."""
     resource = tree.get(path)
     return {
-        "provider": get_value(resource, "provider", PropagationMode.DOWN),
-        "region": get_value(resource, "default_region", PropagationMode.DOWN),
-        "tags": get_value(resource, "tags", PropagationMode.MERGE_DOWN),
-        "monitoring": get_value(resource, "monitoring", PropagationMode.MERGE_DOWN),
-        "backup": get_value(resource, "backup", PropagationMode.MERGE_DOWN),
+        "provider": get_value(resource, "provider", PropagationMode.INHERIT),
+        "region": get_value(resource, "default_region", PropagationMode.INHERIT),
+        "tags": get_value(resource, "tags", PropagationMode.MERGE),
+        "monitoring": get_value(resource, "monitoring", PropagationMode.MERGE),
+        "backup": get_value(resource, "backup", PropagationMode.MERGE),
     }
 
 # Compare AWS vs GCP prod API configs

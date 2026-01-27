@@ -44,10 +44,10 @@ resource.set_attribute("key", "value")
 from hrcp import PropagationMode, get_value
 
 # Just the value
-value = get_value(resource, "key", PropagationMode.DOWN)
+value = get_value(resource, "key", PropagationMode.INHERIT)
 
 # With provenance tracking
-prov = get_value(resource, "key", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(resource, "key", PropagationMode.INHERIT, with_provenance=True)
 print(prov.value, prov.source_path)
 ```
 

@@ -22,7 +22,7 @@ tree.create("/company/marketing", attributes={"budget": 200000})
 # Aggregate budgets upward
 def get_total_budget(resource):
     """Get total budget for a resource and all descendants."""
-    budgets = get_value(resource, "budget", PropagationMode.UP)
+    budgets = get_value(resource, "budget", PropagationMode.AGGREGATE)
     return sum(budgets) if budgets else 0
 
 print(f"Engineering total: ${get_total_budget(tree.get('/company/engineering')):,}")
@@ -39,7 +39,7 @@ Track which teams contribute to totals:
 ```python
 def budget_breakdown(resource):
     """Show budget breakdown with sources."""
-    prov = get_value(resource, "budget", PropagationMode.UP, with_provenance=True)
+    prov = get_value(resource, "budget", PropagationMode.AGGREGATE, with_provenance=True)
 
     print(f"\nBudget breakdown for {resource.path}")
     print("-" * 40)

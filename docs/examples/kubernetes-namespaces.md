@@ -56,9 +56,9 @@ def get_namespace_config(tree, namespace_path):
         return None
 
     return {
-        "quota": get_value(ns, "resource_quota", PropagationMode.MERGE_DOWN),
-        "limits": get_value(ns, "limit_range", PropagationMode.MERGE_DOWN),
-        "network": get_value(ns, "network_policy", PropagationMode.DOWN),
+        "quota": get_value(ns, "resource_quota", PropagationMode.MERGE),
+        "limits": get_value(ns, "limit_range", PropagationMode.MERGE),
+        "network": get_value(ns, "network_policy", PropagationMode.INHERIT),
     }
 
 # Compare prod vs dev team-api namespaces

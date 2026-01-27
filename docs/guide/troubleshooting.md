@@ -68,7 +68,7 @@ tree.create("/org/my-resource")  # Single child named "my-resource"
 
 ### Value is None but I expected inheritance
 
-**Cause**: Using `PropagationMode.NONE` instead of `PropagationMode.DOWN`.
+**Cause**: Using `PropagationMode.NONE` instead of `PropagationMode.INHERIT`.
 
 ```python
 tree = ResourceTree(root_name="org")
@@ -81,10 +81,10 @@ team = tree.get("/org/team")
 value = get_value(team, "env", PropagationMode.NONE)
 
 # Returns "prod" - DOWN inherits from ancestors
-value = get_value(team, "env", PropagationMode.DOWN)
+value = get_value(team, "env", PropagationMode.INHERIT)
 ```
 
-**Solution**: Use `PropagationMode.DOWN` for inheritance.
+**Solution**: Use `PropagationMode.INHERIT` for inheritance.
 
 ---
 
@@ -98,11 +98,11 @@ tree.root.set_attribute("tags", ["a", "b"])
 tree.create("/org/team", attributes={"tags": ["c"]})
 
 team = tree.get("/org/team")
-tags = get_value(team, "tags", PropagationMode.MERGE_DOWN)
+tags = get_value(team, "tags", PropagationMode.MERGE)
 # tags == ["c"], NOT ["a", "b", "c"]
 ```
 
-**Solution**: For list merging, use `PropagationMode.UP` to collect values, then flatten:
+**Solution**: For list merging, use `PropagationMode.AGGREGATE` to collect values, then flatten:
 
 ```python
 # Collect all tags from ancestors manually
@@ -126,7 +126,7 @@ def get_merged_tags(resource):
 tree = ResourceTree(root_name="org")
 tree.create("/org/team")  # No "count" attribute set
 
-counts = get_value(tree.root, "count", PropagationMode.UP)
+counts = get_value(tree.root, "count", PropagationMode.AGGREGATE)
 # counts == [] - no values found
 ```
 
@@ -148,14 +148,14 @@ for resource in tree.walk():
 **Cause**: The attribute wasn't found anywhere in the resolution path.
 
 ```python
-prov = get_value(resource, "nonexistent", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(resource, "nonexistent", PropagationMode.INHERIT, with_provenance=True)
 # prov is None (not a Provenance object)
 ```
 
 **Solution**: This is expected behavior. Always check if `prov is not None` before accessing `.value` or `.source_path`:
 
 ```python
-prov = get_value(resource, "key", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(resource, "key", PropagationMode.INHERIT, with_provenance=True)
 if prov is not None:
     print(f"Value: {prov.value} from {prov.source_path}")
 else:
@@ -172,7 +172,7 @@ else:
 tree.root.set_attribute("config", {"db": {"host": "localhost", "port": 5432}})
 tree.create("/org/prod", attributes={"config": {"db": {"host": "prod.db"}}})
 
-prov = get_value(prod, "config", PropagationMode.MERGE_DOWN, with_provenance=True)
+prov = get_value(prod, "config", PropagationMode.MERGE, with_provenance=True)
 # prov.key_sources tracks "db" but not "db.host" or "db.port"
 ```
 
@@ -317,7 +317,7 @@ def trace_value(resource, key, mode):
     if prov.key_sources:
         print(f"Key sources: {prov.key_sources}")
 
-trace_value(my_resource, "config", PropagationMode.MERGE_DOWN)
+trace_value(my_resource, "config", PropagationMode.MERGE)
 ```
 
 ### Validate tree integrity

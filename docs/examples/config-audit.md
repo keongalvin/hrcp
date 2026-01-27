@@ -23,7 +23,7 @@ def audit_report(tree, attrs):
         print(f"\n{resource.path}")
 
         for attr in attrs:
-            prov = get_value(resource, attr, PropagationMode.DOWN, with_provenance=True)
+            prov = get_value(resource, attr, PropagationMode.INHERIT, with_provenance=True)
             if prov.value is not None:
                 source = "(local)" if prov.source_path == resource.path else f"(from {prov.source_path})"
                 print(f"  {attr}: {prov.value} {source}")
@@ -74,8 +74,8 @@ def config_diff(resource1, resource2, attributes):
     print(f"Comparing {resource1.path} vs {resource2.path}\n")
 
     for attr in attributes:
-        p1 = get_value(resource1, attr, PropagationMode.DOWN, with_provenance=True)
-        p2 = get_value(resource2, attr, PropagationMode.DOWN, with_provenance=True)
+        p1 = get_value(resource1, attr, PropagationMode.INHERIT, with_provenance=True)
+        p2 = get_value(resource2, attr, PropagationMode.INHERIT, with_provenance=True)
 
         v1 = p1.value if p1 else None
         v2 = p2.value if p2 else None

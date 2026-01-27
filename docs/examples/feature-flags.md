@@ -38,9 +38,9 @@ def get_user_features(tree, user_path):
         user = tree.root  # Default to global features
 
     return {
-        "new_checkout": get_value(user, "new_checkout", PropagationMode.DOWN),
-        "dark_mode": get_value(user, "dark_mode", PropagationMode.DOWN),
-        "ai_suggestions": get_value(user, "ai_suggestions", PropagationMode.DOWN),
+        "new_checkout": get_value(user, "new_checkout", PropagationMode.INHERIT),
+        "dark_mode": get_value(user, "dark_mode", PropagationMode.INHERIT),
+        "ai_suggestions": get_value(user, "ai_suggestions", PropagationMode.INHERIT),
     }
 
 print(get_user_features(tree, "/features/beta/user-123"))
