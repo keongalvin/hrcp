@@ -534,6 +534,119 @@ class TestPropagationCollectAncestors:
         assert prov.contributing_paths == ["/org/team/account", "/org/team", "/org"]
 
 
+class TestRequirePathProperties:
+    """Test REQUIRE_PATH propagation properties with Hypothesis."""
+
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        parent_val=st.booleans(),
+        child_val=st.booleans(),
+    )
+    def test_require_path_only_true_when_all_true(
+        self, root_name, child_name, key, parent_val, child_val
+    ):
+        """REQUIRE_PATH returns truthy only when ALL ancestors are truthy."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, parent_val)
+        child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
+
+        result = get_value(child, key, PropagationMode.REQUIRE_PATH)
+
+        if parent_val and child_val:
+            assert result is True
+        else:
+            assert result is None
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name)
+    def test_require_path_none_when_child_missing(self, root_name, child_name, key):
+        """REQUIRE_PATH returns None when child doesn't have the attribute."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, True)
+        child = tree.create(f"/{root_name}/{child_name}")
+
+        result = get_value(child, key, PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+    @given(root_name=valid_name, child_name=valid_name, key=valid_name)
+    def test_require_path_none_when_parent_missing(self, root_name, child_name, key):
+        """REQUIRE_PATH returns None when parent doesn't have the attribute."""
+        tree = ResourceTree(root_name=root_name)
+        child = tree.create(f"/{root_name}/{child_name}", attributes={key: True})
+
+        result = get_value(child, key, PropagationMode.REQUIRE_PATH)
+
+        assert result is None
+
+
+class TestCollectAncestorsProperties:
+    """Test COLLECT_ANCESTORS propagation properties with Hypothesis."""
+
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        values=st.lists(st.booleans(), min_size=2, max_size=2),
+    )
+    def test_collect_ancestors_all_equals_require_path(
+        self, root_name, child_name, key, values
+    ):
+        """COLLECT_ANCESTORS + all() behaves like REQUIRE_PATH for booleans."""
+        parent_val, child_val = values
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, parent_val)
+        child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
+
+        collected = get_value(child, key, PropagationMode.COLLECT_ANCESTORS)
+        require_path = get_value(child, key, PropagationMode.REQUIRE_PATH)
+
+        # all(collected) should match REQUIRE_PATH behavior
+        if all(collected):
+            assert require_path is True
+        else:
+            assert require_path is None
+
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        parent_val=st.booleans(),
+        child_val=st.booleans(),
+    )
+    def test_collect_ancestors_any_true_when_one_true(
+        self, root_name, child_name, key, parent_val, child_val
+    ):
+        """COLLECT_ANCESTORS + any() is True when at least one ancestor is True."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, parent_val)
+        child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
+
+        collected = get_value(child, key, PropagationMode.COLLECT_ANCESTORS)
+
+        assert any(collected) == (parent_val or child_val)
+
+    @given(
+        root_name=valid_name,
+        child_name=valid_name,
+        key=valid_name,
+        parent_val=st.booleans(),
+        child_val=st.booleans(),
+    )
+    def test_collect_ancestors_order_is_child_to_root(
+        self, root_name, child_name, key, parent_val, child_val
+    ):
+        """COLLECT_ANCESTORS returns values from child to root order."""
+        tree = ResourceTree(root_name=root_name)
+        tree.root.set_attribute(key, parent_val)
+        child = tree.create(f"/{root_name}/{child_name}", attributes={key: child_val})
+
+        collected = get_value(child, key, PropagationMode.COLLECT_ANCESTORS)
+
+        assert collected == [child_val, parent_val]
+
+
 class TestGetValueCombined:
     """Test the combined get_value function with optional provenance."""
 
