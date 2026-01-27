@@ -57,6 +57,65 @@ data = {
 tree = ResourceTree.from_dict(data)
 ```
 
+## Dict Schema Reference
+
+The dictionary format used by `to_dict()` and `from_dict()` follows this schema:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `str` | Yes | Resource name (unique within parent) |
+| `attributes` | `dict[str, Any]` | Yes | Key-value configuration pairs |
+| `children` | `dict[str, ResourceDict]` | Yes | Child resources keyed by name |
+
+### Schema Definition
+
+```python
+# Type definition for reference
+ResourceDict = TypedDict('ResourceDict', {
+    'name': str,                          # Required: resource identifier
+    'attributes': dict[str, Any],         # Required: configuration data
+    'children': dict[str, 'ResourceDict'] # Required: nested resources
+})
+```
+
+### Validation Rules
+
+- `name` must be a non-empty string without `/` characters
+- `attributes` must be a dict (can be empty `{}`)
+- `children` must be a dict (can be empty `{}`)
+- Child keys must match the child's `name` field
+- All values in `attributes` should be JSON-serializable
+
+### Example: Complete Tree
+
+```python
+{
+    "name": "platform",
+    "attributes": {
+        "env": "production",
+        "timeout": 30
+    },
+    "children": {
+        "us-east": {
+            "name": "us-east",
+            "attributes": {"region": "us-east-1"},
+            "children": {
+                "api": {
+                    "name": "api",
+                    "attributes": {"port": 8080, "replicas": 3},
+                    "children": {}
+                },
+                "db": {
+                    "name": "db",
+                    "attributes": {"engine": "postgres"},
+                    "children": {}
+                }
+            }
+        }
+    }
+}
+```
+
 ## Practical Patterns
 
 ### Configuration as Code

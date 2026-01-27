@@ -3,10 +3,10 @@
 ## Public API
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_value, Provenance
+from hrcp import ResourceTree, Resource, PropagationMode, get_value, Provenance
 ```
 
-That's it. Four exports.
+Five exports—everything you need for hierarchical configuration with provenance.
 
 ## Quick Reference
 

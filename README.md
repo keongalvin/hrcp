@@ -2,6 +2,7 @@
 
 **Hierarchical Resource Configuration with Provenance**
 
+[![CI](https://github.com/keongalvin/hrcp/actions/workflows/ci.yaml/badge.svg)](https://github.com/keongalvin/hrcp/actions/workflows/ci.yaml)
 [![PyPI version](https://img.shields.io/pypi/v/hrcp.svg)](https://pypi.org/project/hrcp/)
 [![Python versions](https://img.shields.io/pypi/pyversions/hrcp.svg)](https://pypi.org/project/hrcp/)
 [![License](https://img.shields.io/pypi/l/hrcp.svg)](https://github.com/keongalvin/hrcp/blob/main/LICENSE)
@@ -16,7 +17,7 @@ Configuration in hierarchical systems (orgs → teams → projects, regions → 
 - **Aggregation**: Roll up values from children
 - **Traceability**: Know exactly which node provided each value
 
-HRCP solves this with ~1200 lines of dependency-free Python.
+HRCP solves this with ~1000 lines of dependency-free Python.
 
 ## Installation
 
@@ -206,22 +207,22 @@ uv run pytest
 # Run linter
 uv run ruff check .
 
+# Run benchmarks
+uv run python bench/benchmark.py
+
 # Build docs locally
 uv run mkdocs serve
 ```
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests for your changes
-4. Ensure all tests pass (`uv run pytest`)
-5. Run the linter (`uv run ruff check .`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+Key points:
+- We follow strict **Test-Driven Development** (TDD)
+- Write failing tests first, then implement
+- No mocks or monkeypatching - use pure data models
+- Run `uv run pytest` and `uv run ruff check .` before submitting
 
 ## License
 

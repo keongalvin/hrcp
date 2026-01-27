@@ -111,8 +111,20 @@ nav:
       - Provenance: guide/provenance.md
       - Wildcards: guide/wildcards.md
       - Serialization: guide/serialization.md
+      - Troubleshooting: guide/troubleshooting.md
   - Examples:
-      - Use Cases: examples/use-cases.md
+      - Overview: examples/use-cases.md
+      - Multi-Tenant SaaS: examples/multi-tenant-saas.md
+      - Infrastructure Config: examples/infrastructure-config.md
+      - Feature Flags: examples/feature-flags.md
+      - Budget Rollup: examples/budget-rollup.md
+      - Access Control: examples/access-control.md
+      - Kubernetes Namespaces: examples/kubernetes-namespaces.md
+      - GitOps Config: examples/gitops-config.md
+      - Multi-Cloud: examples/multi-cloud.md
+      - Game Servers: examples/game-servers.md
+      - E-commerce Catalog: examples/ecommerce-catalog.md
+      - Configuration Audit: examples/config-audit.md
   - API Reference:
       - Overview: api/index.md
       - hrcp: api/hrcp.md

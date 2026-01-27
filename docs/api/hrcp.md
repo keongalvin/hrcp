@@ -5,10 +5,26 @@ Main module exporting the public API.
 ## Usage
 
 ```python
-from hrcp import ResourceTree, PropagationMode, get_value, Provenance
+from hrcp import ResourceTree, Resource, PropagationMode, get_value, Provenance
 ```
 
 ## Classes
+
+::: hrcp.Resource
+    options:
+      members:
+        - __init__
+        - name
+        - path
+        - parent
+        - children
+        - attributes
+        - add_child
+        - remove_child
+        - get_child
+        - set_attribute
+        - get_attribute
+        - delete_attribute
 
 ::: hrcp.ResourceTree
     options:

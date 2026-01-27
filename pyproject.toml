@@ -103,6 +103,7 @@ extend-ignore-names = ["hrcp"]
 [tool.ruff.lint.per-file-ignores]
 "bench/**" = [
     "INP001", # Benchmarks don't have to be importable.
+    "T201",   # print() is expected in benchmark scripts.
 ]
 "**/test_*" = [
     "INP001",

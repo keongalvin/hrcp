@@ -70,15 +70,27 @@ print(prov.source_path)  # "/org/team" - closest ancestor with value
 Shows if the value is set locally:
 
 ```python
+# When attribute IS set locally
+project.set_attribute("env", "staging")
 prov = get_value(project, "env", PropagationMode.NONE, with_provenance=True)
 
-print(prov.value)        # None
-print(prov.source_path)  # None - not set locally
+print(prov.value)        # "staging"
+print(prov.source_path)  # "/org/team/project"
+
+# When attribute is NOT set locally
+prov = get_value(project, "other", PropagationMode.NONE, with_provenance=True)
+print(prov)  # None - returns None, not a Provenance object
 ```
+
+!!! note "Return Value"
+    When an attribute is not found, `get_value(..., with_provenance=True)` returns `None`, not a Provenance object with null values. Always check for `None` before accessing `.value`.
 
 ### UP Propagation
 
-For UP propagation, provenance tracks all contributing resources:
+For UP propagation, provenance tracks all contributing resources. Note the distinction between two fields:
+
+- **`source_path`**: The resource where aggregation was performed (where you called `get_value`)
+- **`contributing_paths`**: All resources in the subtree that had the attribute
 
 ```python
 tree = ResourceTree(root_name="company")
@@ -88,9 +100,12 @@ tree.create("/company/sales", attributes={"budget": 50000})
 prov = get_value(tree.root, "budget", PropagationMode.UP, with_provenance=True)
 
 print(prov.value)  # [100000, 50000]
-print(prov.source_path)  # "/company" (the aggregation point)
-print(prov.contributing_paths)  # ["/company/eng", "/company/sales"]
+print(prov.source_path)  # "/company" (the aggregation point - where you queried)
+print(prov.contributing_paths)  # ["/company/eng", "/company/sales"] (where values came from)
 ```
+
+!!! tip "Understanding UP Provenance"
+    Think of `source_path` as "where did I ask?" and `contributing_paths` as "where did the values come from?"
 
 ### MERGE_DOWN Propagation
 

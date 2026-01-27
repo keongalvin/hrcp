@@ -1,6 +1,6 @@
 # Philosophy & Scope
 
-HRCP is intentionally minimal: **~1200 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
+HRCP is intentionally minimal: **~1000 lines of dependency-free Python** solving hierarchical configuration with provenance—nothing more.
 
 ## Core Focus
 
@@ -77,6 +77,64 @@ These features were considered but rejected as beyond the library's scope:
 | Conditional Propagation | Too complex |
 | Watch/Subscribe | Real-time is out of scope |
 | Schema Validation | Too complex—use Pydantic/attrs externally |
+
+## Thread Safety
+
+HRCP is **not thread-safe** by design. This is intentional:
+
+- Configuration is typically loaded at startup, not modified at runtime
+- Thread-safe data structures add complexity and overhead
+- Users who need concurrency can add their own synchronization
+
+### Single-Threaded Usage (Recommended)
+
+```python
+# Load config at startup
+tree = ResourceTree.from_json("config.json")
+
+# Use throughout application (read-only)
+timeout = get_value(resource, "timeout", PropagationMode.DOWN)
+```
+
+### Multi-Threaded Usage
+
+If you need concurrent access:
+
+```python
+import threading
+
+# Option 1: Read-only after initialization (safe)
+tree = ResourceTree.from_json("config.json")
+# Multiple threads can safely read from tree
+
+# Option 2: Lock for modifications
+lock = threading.Lock()
+
+def update_config(path, key, value):
+    with lock:
+        resource = tree.get(path)
+        resource.set_attribute(key, value)
+
+# Option 3: Copy-on-write pattern
+def get_updated_tree(tree, path, key, value):
+    new_tree = ResourceTree.from_dict(tree.to_dict())
+    new_tree.get(path).set_attribute(key, value)
+    return new_tree
+```
+
+### Async/Await
+
+HRCP operations are synchronous. For async applications:
+
+```python
+import asyncio
+
+async def load_config():
+    # Run synchronous code in executor
+    loop = asyncio.get_event_loop()
+    tree = await loop.run_in_executor(None, ResourceTree.from_json, "config.json")
+    return tree
+```
 
 ## Guidelines for New Features
 

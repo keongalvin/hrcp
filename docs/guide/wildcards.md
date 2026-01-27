@@ -89,8 +89,8 @@ from hrcp import PropagationMode
 
 # Get all timeout values for API services
 timeouts = tree.query_values("/platform/*/api", "timeout", PropagationMode.NONE)
-# Returns dict: {path: value, ...}
-# {"/platform/us-east/api": 60, "/platform/us-west/api": 30, ...}
+# Returns a list of values (excludes None values)
+# [60, 30, 45]
 ```
 
 ## Practical Examples
@@ -104,12 +104,12 @@ def check_required_config(tree, pattern, required_attrs):
     """Check that all matching resources have required attributes."""
     resources = tree.query(pattern)
     issues = []
-    
+
     for resource in resources:
         for attr in required_attrs:
             if resource.get_attribute(attr) is None:
                 issues.append(f"{resource.path} missing {attr}")
-    
+
     return issues
 
 issues = check_required_config(
@@ -128,11 +128,11 @@ def set_on_matching(tree, pattern, attr, value):
     """Set attribute on all resources matching pattern."""
     resources = tree.query(pattern)
     count = 0
-    
+
     for resource in resources:
         resource.set_attribute(attr, value)
         count += 1
-    
+
     return count
 
 # Enable feature flag on all API services
@@ -148,10 +148,10 @@ Generate a report across resources:
 def config_report(tree, pattern, attrs):
     """Generate config report for matching resources."""
     resources = tree.query(pattern)
-    
+
     print(f"Configuration Report: {pattern}")
     print("=" * 60)
-    
+
     for resource in resources:
         print(f"\n{resource.path}")
         for attr in attrs:

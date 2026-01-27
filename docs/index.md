@@ -38,7 +38,7 @@ Configuration in hierarchical systems (orgs → teams → projects, regions → 
 - **Aggregation**: Roll up values from children
 - **Traceability**: Know exactly which node provided each value
 
-HRCP solves this with ~2000 lines of dependency-free Python.
+HRCP solves this with ~1000 lines of dependency-free Python.
 
 ## Quick Example
 

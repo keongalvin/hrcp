@@ -43,14 +43,43 @@ import hrcp
 print(hrcp.__version__)
 ```
 
-## Optional Dependencies
+## Zero Dependencies
 
-HRCP has minimal dependencies:
+HRCP has **no runtime dependencies**. It uses only Python's standard library:
 
-- **pyyaml**: For YAML serialization support
-- **tomli-w**: For TOML serialization support
+- `json` for serialization
+- `re` for wildcard pattern matching
+- `collections.abc` for type hints
 
-These are included by default. For a truly dependency-free installation, you can use only JSON serialization.
+This makes HRCP lightweight, fast to install, and free from dependency conflicts.
+
+## Serialization Formats
+
+HRCP provides built-in support for:
+
+| Format | Methods | Notes |
+|--------|---------|-------|
+| **JSON** | `to_json()`, `from_json()` | Built-in, no dependencies |
+| **Dict** | `to_dict()`, `from_dict()` | For programmatic use |
+
+### Using Other Formats
+
+Since `to_dict()` returns a standard Python dict, you can easily serialize to any format:
+
+```python
+# YAML (requires pyyaml)
+import yaml
+data = tree.to_dict()
+with open("config.yaml", "w") as f:
+    yaml.dump(data, f)
+
+# TOML (requires tomli-w for writing, tomllib for reading in 3.11+)
+import tomllib
+import tomli_w
+data = tree.to_dict()
+with open("config.toml", "wb") as f:
+    tomli_w.dump(data, f)
+```
 
 ## Next Steps
 
