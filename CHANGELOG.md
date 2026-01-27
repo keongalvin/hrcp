@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Python 3.14 support
+- New propagation modes:
+  - `REQUIRE_PATH`: Returns value only if ALL ancestors have truthy values (opt-in features)
+  - `COLLECT_ANCESTORS`: Collects all ancestor values as a list (custom AND/OR logic)
+
+### Changed
+- Renamed propagation modes for clarity (backward-compatible aliases provided):
+  - `DOWN` → `INHERIT` (values inherit from ancestors)
+  - `UP` → `AGGREGATE` (values collected from descendants)
+  - `MERGE_DOWN` → `MERGE` (deep merge from ancestors)
+
+### Deprecated
+- `PropagationMode.DOWN` (use `INHERIT`)
+- `PropagationMode.UP` (use `AGGREGATE`)
+- `PropagationMode.MERGE_DOWN` (use `MERGE`)
 - Dict schema reference in serialization documentation
 - Clarified UP mode provenance with `source_path` vs `contributing_paths` explanation
 - Troubleshooting guide with common errors and debugging tips

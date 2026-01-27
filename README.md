@@ -39,17 +39,17 @@ tree.create("/platform/us-east/api", attributes={"timeout": 60})
 tree.create("/platform/us-east/db")
 tree.create("/platform/eu-west/api")
 
-# Inheritance: values flow DOWN
+# Inheritance: values flow from ancestors
 api = tree.get("/platform/us-east/api")
-timeout = get_value(api, "timeout", PropagationMode.DOWN)
+timeout = get_value(api, "timeout", PropagationMode.INHERIT)
 # timeout == 60 (local override)
 
 db = tree.get("/platform/us-east/db")
-timeout = get_value(db, "timeout", PropagationMode.DOWN)
+timeout = get_value(db, "timeout", PropagationMode.INHERIT)
 # timeout == 30 (inherited from root)
 
 # Provenance: know where it came from
-prov = get_value(db, "timeout", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(db, "timeout", PropagationMode.INHERIT, with_provenance=True)
 print(prov.value)        # 30
 print(prov.source_path)  # "/platform" - the root provided this value
 ```
@@ -58,12 +58,14 @@ print(prov.source_path)  # "/platform" - the root provided this value
 
 | Mode | Direction | Use Case |
 |------|-----------|----------|
-| `DOWN` | Ancestors → Resource | Inherit defaults, allow overrides |
-| `UP` | Descendants → Resource | Aggregate values, collect metrics |
-| `MERGE_DOWN` | Ancestors → Resource | Deep-merge dictionaries |
+| `INHERIT` | Ancestors → Resource | Inherit defaults, allow overrides |
+| `AGGREGATE` | Descendants → Resource | Aggregate values, collect metrics |
+| `MERGE` | Ancestors → Resource | Deep-merge dictionaries |
+| `REQUIRE_PATH` | Ancestors → Resource | All ancestors must have truthy values |
+| `COLLECT_ANCESTORS` | Ancestors → Resource | Collect all ancestor values as list |
 | `NONE` | Local only | Get only directly set values |
 
-### DOWN - Inherit from Ancestors
+### INHERIT - Inherit from Ancestors
 
 Values cascade from parent to children. Closest ancestor wins.
 
@@ -72,11 +74,11 @@ tree.root.set_attribute("tier", "premium")
 tree.create("/org/team/project")
 
 project = tree.get("/org/team/project")
-tier = get_value(project, "tier", PropagationMode.DOWN)
+tier = get_value(project, "tier", PropagationMode.INHERIT)
 # "premium" - inherited from root
 ```
 
-### UP - Aggregate from Descendants
+### AGGREGATE - Aggregate from Descendants
 
 Collect all values from the subtree.
 
@@ -84,11 +86,11 @@ Collect all values from the subtree.
 tree.create("/org/team1", attributes={"headcount": 5})
 tree.create("/org/team2", attributes={"headcount": 8})
 
-counts = get_value(tree.root, "headcount", PropagationMode.UP)
+counts = get_value(tree.root, "headcount", PropagationMode.AGGREGATE)
 # [5, 8]
 ```
 
-### MERGE_DOWN - Deep Dict Merge
+### MERGE - Deep Dict Merge
 
 Recursively merge dicts through the hierarchy.
 
@@ -97,8 +99,24 @@ tree.root.set_attribute("config", {"db": {"host": "localhost", "port": 5432}})
 tree.create("/org/prod", attributes={"config": {"db": {"host": "prod.db.internal"}}})
 
 prod = tree.get("/org/prod")
-config = get_value(prod, "config", PropagationMode.MERGE_DOWN)
+config = get_value(prod, "config", PropagationMode.MERGE)
 # {"db": {"host": "prod.db.internal", "port": 5432}}
+```
+
+### REQUIRE_PATH - All Ancestors Must Enable
+
+Returns value only if ALL ancestors have truthy values. Perfect for opt-in features.
+
+```python
+tree.root.set_attribute("feature_enabled", True)
+tree.create("/org", attributes={"feature_enabled": True})
+account = tree.create("/org/account", attributes={"feature_enabled": True})
+
+# All ancestors enabled → returns True
+enabled = get_value(account, "feature_enabled", PropagationMode.REQUIRE_PATH)
+# True
+
+# If ANY ancestor is False or missing → returns None
 ```
 
 ## Provenance
@@ -106,13 +124,13 @@ config = get_value(prod, "config", PropagationMode.MERGE_DOWN)
 The killer feature. Always know where a value came from:
 
 ```python
-prov = get_value(resource, "timeout", PropagationMode.DOWN, with_provenance=True)
+prov = get_value(resource, "timeout", PropagationMode.INHERIT, with_provenance=True)
 prov.value        # The resolved value
 prov.source_path  # Path of the resource that provided it
 prov.mode         # The propagation mode used
 ```
 
-For MERGE_DOWN, provenance tracks which resource contributed each key via `prov.key_sources`.
+For MERGE, provenance tracks which resource contributed each key via `prov.key_sources`.
 
 ## Wildcards
 
