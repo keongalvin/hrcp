@@ -59,7 +59,7 @@ from hrcp import get_value, PropagationMode
 # Get a resource
 db = tree.get("/platform/us-east/db")
 
-# Get inherited value (flows DOWN from ancestors)
+# Get inherited value (flows from ancestors via INHERIT)
 timeout = get_value(db, "timeout", PropagationMode.INHERIT)
 print(timeout)  # 30 - inherited from root
 ```

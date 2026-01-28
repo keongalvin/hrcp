@@ -92,9 +92,9 @@ Real-world examples of how HRCP solves hierarchical configuration problems.
 
 | Mode | Best For | Examples |
 |------|----------|----------|
-| **DOWN** | Defaults & inheritance | [SaaS](multi-tenant-saas.md), [Feature Flags](feature-flags.md), [Infrastructure](infrastructure-config.md) |
-| **UP** | Aggregation & rollups | [Budget Rollup](budget-rollup.md), [Access Control](access-control.md) |
-| **MERGE_DOWN** | Layered configurations | [Kubernetes](kubernetes-namespaces.md), [GitOps](gitops-config.md), [Multi-Cloud](multi-cloud.md) |
+| **INHERIT** | Defaults & inheritance | [SaaS](multi-tenant-saas.md), [Feature Flags](feature-flags.md), [Infrastructure](infrastructure-config.md) |
+| **AGGREGATE** | Aggregation & rollups | [Budget Rollup](budget-rollup.md), [Access Control](access-control.md) |
+| **MERGE** | Layered configurations | [Kubernetes](kubernetes-namespaces.md), [GitOps](gitops-config.md), [Multi-Cloud](multi-cloud.md) |
 | **NONE** | Local-only values | [Audit](config-audit.md) (checking what's set locally) |
 
 ## Common Patterns

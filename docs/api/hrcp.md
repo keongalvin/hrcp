@@ -45,9 +45,11 @@ from hrcp import ResourceTree, Resource, PropagationMode, get_value, Provenance
 ::: hrcp.PropagationMode
     options:
       members:
-        - DOWN
-        - UP
-        - MERGE_DOWN
+        - INHERIT
+        - AGGREGATE
+        - MERGE
+        - REQUIRE_PATH
+        - COLLECT_ANCESTORS
         - NONE
 
 ::: hrcp.Provenance

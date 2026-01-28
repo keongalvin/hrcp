@@ -81,4 +81,4 @@ print(f"\nTournament tick rate: {tournament['tick_rate']}")      # 128
 - **Global game settings** (version, tick rate) at root
 - **Regional customization** for latency targets and datacenters
 - **Game mode variations** (ranked, casual, tournament)
-- **MERGE_DOWN** for anti-cheat and matchmaking allows granular control
+- **MERGE** for anti-cheat and matchmaking allows granular control

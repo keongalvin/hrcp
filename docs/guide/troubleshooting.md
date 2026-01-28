@@ -90,7 +90,7 @@ team = tree.get("/org/team")
 # Returns None - NONE only checks local attributes
 value = get_value(team, "env", PropagationMode.NONE)
 
-# Returns "prod" - DOWN inherits from ancestors
+# Returns "prod" - INHERIT inherits from ancestors
 value = get_value(team, "env", PropagationMode.INHERIT)
 ```
 
@@ -98,9 +98,9 @@ value = get_value(team, "env", PropagationMode.INHERIT)
 
 ---
 
-### MERGE_DOWN not merging as expected
+### MERGE not merging as expected
 
-**Cause**: MERGE_DOWN only merges dictionaries. Non-dict values are replaced entirely.
+**Cause**: MERGE only merges dictionaries. Non-dict values are replaced entirely.
 
 ```python
 tree = ResourceTree(root_name="org")
@@ -174,7 +174,7 @@ else:
 
 ---
 
-### key_sources missing keys in MERGE_DOWN
+### key_sources missing keys in MERGE
 
 **Cause**: `key_sources` only tracks top-level keys in the merged dict.
 

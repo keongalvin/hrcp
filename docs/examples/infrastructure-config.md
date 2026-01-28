@@ -59,5 +59,5 @@ print(f"Instance type: {prov.value} (from {prov.source_path})")
 
 - **Environment separation** (prod/staging) with different defaults
 - **Service-specific overrides** for replicas, ports, instance types
-- **MERGE_DOWN** for monitoring config allows partial customization
+- **MERGE** for monitoring config allows partial customization
 - **Provenance tracking** shows which level defined each setting

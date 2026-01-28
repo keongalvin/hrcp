@@ -68,5 +68,5 @@ print(f"  Returns: {shoes_policy['return_policy']['days']} days")          # 60
 - **Store defaults** (currency, tax, shipping) at root
 - **Category overrides** for different product types
 - **Deep category hierarchies** (electronics → computers → laptops)
-- **MERGE_DOWN** for policies allows partial customization
+- **MERGE** for policies allows partial customization
 - **Missing attributes** (warranty on clothing) naturally return None

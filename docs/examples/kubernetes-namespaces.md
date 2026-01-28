@@ -81,5 +81,5 @@ print(f"  Network: {dev_config['network']}")              # allow-all
 - **Cluster defaults** apply to all namespaces
 - **Environment overrides** (prod/dev) customize resource limits
 - **Team namespaces** inherit from their environment
-- **MERGE_DOWN** for quotas and limits allows partial overrides
-- **DOWN** for network policy uses closest ancestor's value
+- **MERGE** for quotas and limits allows partial overrides
+- **INHERIT** for network policy uses closest ancestor's value

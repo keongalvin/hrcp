@@ -43,12 +43,12 @@ print(prov.mode)         # PropagationMode.INHERIT
 | `value` | The resolved value |
 | `source_path` | Path of the resource that provided the value |
 | `mode` | The propagation mode used to resolve |
-| `key_sources` | For MERGE_DOWN with dict values, maps each key to the path that provided it (uses dot notation for nested keys) |
+| `key_sources` | For MERGE with dict values, maps each key to the path that provided it (uses dot notation for nested keys) |
 | `contributing_paths` | For UP aggregation, lists all resource paths that contributed values |
 
 ## Provenance with Different Modes
 
-### DOWN Propagation
+### INHERIT Propagation
 
 Shows which ancestor provided the value:
 
@@ -111,7 +111,7 @@ print(prov.contributing_paths)  # ["/company/eng", "/company/sales"] (where valu
 !!! tip "Understanding UP Provenance"
     Think of `source_path` as "where did I ask?" and `contributing_paths` as "where did the values come from?"
 
-### MERGE_DOWN Propagation
+### MERGE Propagation
 
 For merged dictionaries, provenance tracks which resource contributed each key:
 

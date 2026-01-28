@@ -58,4 +58,4 @@ features = get_value(analytics, "features", PropagationMode.MERGE)
 - **Platform defaults** at root level apply to all tenants
 - **Tenant overrides** customize limits and features per customer
 - **Project inheritance** means less configuration to manage
-- **MERGE_DOWN** for feature flags allows partial overrides
+- **MERGE** for feature flags allows partial overrides

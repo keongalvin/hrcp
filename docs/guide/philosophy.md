@@ -4,9 +4,9 @@ HRCP is intentionally minimal: **~1000 lines of dependency-free Python** solving
 
 ## Core Focus
 
-- **Inheritance (DOWN)**: Set defaults at the top, override at any level
-- **Aggregation (UP)**: Roll up values from children
-- **Merge (MERGE_DOWN)**: Combine dictionaries/lists hierarchically
+- **Inheritance (INHERIT)**: Set defaults at the top, override at any level
+- **Aggregation (AGGREGATE)**: Roll up values from children
+- **Merge (MERGE)**: Combine dictionaries hierarchically
 - **Traceability**: Always know where a value came from
 
 ## DIY Patterns

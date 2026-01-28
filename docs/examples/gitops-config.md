@@ -65,4 +65,4 @@ for env in ["dev", "staging", "prod"]:
 - **Base configuration** at root applies to all apps/environments
 - **App structure** groups environments under each application
 - **Environment promotion** (dev → staging → prod) with increasing resources
-- **MERGE_DOWN** for resource specs allows partial overrides
+- **MERGE** for resource specs allows partial overrides
